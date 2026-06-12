@@ -43,13 +43,13 @@ var is_controlling = false
 @onready var refill_timer: Timer = $refill_timer
 
 # === PUNTAJE (B1) y CONTADOR (B2) ===
-# Contrato sugerido para comunicarte con el HUD (top_ui.gd). No es obligatorio usar
-# señales, pero ayuda a mantener la UI desacoplada de la lógica del tablero:
-#   signal score_changed(nuevo_puntaje: int)
-#   signal counter_changed(restantes: int)        # movimientos o segundos, tú decides
-#   signal game_finished(gano: bool)
-# TODO (PARCIAL · B1/B2): declara aquí el puntaje y el contador (y sus señales, si las usas).
+signal score_changed(nuevo_puntaje: int)
+signal counter_changed(restantes: int)  
+#signal game_finished(gano: bool)
 
+var score: int = 0
+var counter: int = 0
+const pointsPerMatch:int = 10
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -218,15 +218,16 @@ func find_matches():
 	
 func destroy_matched():
 	var was_matched = false
+	var matched:int = 0
 	for i in width:
 		for j in height:
 			if all_pieces[i][j] != null and all_pieces[i][j].matched:
 				was_matched = true
-				# TODO (PARCIAL · B1): suma puntaje por cada pieza destruida (o por
-				# combinación) y emite score_changed para actualizar el HUD.
+				matched += 1
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
-
+	score += matched * pointsPerMatch 
+	score_changed.emit(score)
 	move_checked = true
 	if was_matched:
 		collapse_timer.start()
