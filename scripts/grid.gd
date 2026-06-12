@@ -48,9 +48,10 @@ signal counter_changed(restantes: int, total:int)
 #signal game_finished(gano: bool)
 
 var score: int = 0
-var counted: int = 0
-const pointsPerMatch:int = 10
-var moves:int = 3
+var moves:int = 10
+var counted: int = moves
+const pointsPerUnit:int = 10
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -58,6 +59,7 @@ func _ready():
 	randomize()
 	all_pieces = make_2d_array()
 	spawn_pieces()
+	counter_changed.emit(counted, moves)
 
 func make_2d_array():
 	var array = []
@@ -126,7 +128,7 @@ func touch_input():
 		touch_difference(first_touch, final_touch)
 
 func swap_pieces(column, row, direction: Vector2):
-	if counted >= moves:
+	if counted <= 0:
 		game_over()
 		return
 	var first_piece = all_pieces[column][row]
@@ -232,10 +234,10 @@ func destroy_matched():
 				all_pieces[i][j] = null
 	move_checked = true
 	if was_matched:
-		score += matched * pointsPerMatch 
+		score += matched * pointsPerUnit
 		score_changed.emit(score)
 		collapse_timer.start()
-		counted += 1
+		counted -= 1
 		counter_changed.emit(counted, moves)
 	else:
 		swap_back()
@@ -302,6 +304,7 @@ func _on_refill_timer_timeout():
 	refill_columns()
 	
 func game_over():
+	counted = moves
 	state = WAIT
 	# TODO (PARCIAL · B3): muestra la pantalla final (victoria o derrota), detén la
 	# entrada del jugador y ofrece reiniciar la partida. Emite game_finished(gano).
