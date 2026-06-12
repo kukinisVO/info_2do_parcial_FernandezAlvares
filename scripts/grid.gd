@@ -44,12 +44,13 @@ var is_controlling = false
 
 # === PUNTAJE (B1) y CONTADOR (B2) ===
 signal score_changed(nuevo_puntaje: int)
-signal counter_changed(restantes: int)  
+signal counter_changed(restantes: int, total:int)  
 #signal game_finished(gano: bool)
 
 var score: int = 0
-var counter: int = 0
+var counted: int = 0
 const pointsPerMatch:int = 10
+var moves:int = 3
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -125,6 +126,9 @@ func touch_input():
 		touch_difference(first_touch, final_touch)
 
 func swap_pieces(column, row, direction: Vector2):
+	if counted >= moves:
+		game_over()
+		return
 	var first_piece = all_pieces[column][row]
 	var other_piece = all_pieces[column + direction.x][row + direction.y]
 	if first_piece == null or other_piece == null:
@@ -226,11 +230,13 @@ func destroy_matched():
 				matched += 1
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
-	score += matched * pointsPerMatch 
-	score_changed.emit(score)
 	move_checked = true
 	if was_matched:
+		score += matched * pointsPerMatch 
+		score_changed.emit(score)
 		collapse_timer.start()
+		counted += 1
+		counter_changed.emit(counted, moves)
 	else:
 		swap_back()
 

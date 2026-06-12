@@ -16,6 +16,6 @@ func update_score(nuevo_puntaje: int) -> void:
 	current_score = nuevo_puntaje
 	score_label.text = str(current_score)
 
-func update_counter(restantes: int) -> void:
+func update_counter(restantes: int, _total:int) -> void:
 	current_count = restantes
 	counter_label.text = str(current_count)
