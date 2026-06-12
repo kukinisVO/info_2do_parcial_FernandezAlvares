@@ -8,12 +8,13 @@ extends Resource
 
 enum Objetivo { PUNTAJE, RECOLECTAR_COLOR }
 
-@export var nombre: String = "Nivel 1"
-@export var objetivo_tipo: Objetivo = Objetivo.PUNTAJE
-@export var objetivo_valor: int = 1000            # puntaje meta, o cantidad a recolectar
-@export var objetivo_color: String = "blue"       # solo si objetivo_tipo == RECOLECTAR_COLOR
-@export var limite_movimientos: int = 20          # 0 = sin límite de movimientos
-@export var limite_segundos: int = 0              # 0 = sin límite de tiempo
-@export var colores_disponibles: Array[String] = [
+@export var name: String = "Nivel 1"
+@export var type: Objetivo = Objetivo.PUNTAJE
+@export var value: int = 1000            # puntaje meta, o cantidad a recolectar
+@export var color: String = "blue"       # solo si objetivo_tipo == RECOLECTAR_COLOR
+@export var moves_limit: int = 20          # 0 = sin límite de movimientos
+@export var time_limit: int = 0              # 0 = sin límite de tiempo
+@export var available_colors: Array[String] = [
 	"blue", "green", "light_green", "pink", "yellow", "orange",
 ]
+@export var points_per_unit: int = 10
