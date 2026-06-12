@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://tj73f3von03j"]
+
+[ext_resource type="Script" uid="uid://btkvhdxw1faoa" path="res://scripts/audio_controller.gd" id="1_5dt40"]
+[ext_resource type="AudioStream" uid="uid://dw2p6o6bmnuxi" path="res://assets/Music/theme-4.ogg" id="1_41o6r"]
+[ext_resource type="AudioStream" uid="uid://cknjh01pevq21" path="res://assets/Sounds/2.ogg" id="2_12scf"]
+[ext_resource type="AudioStream" uid="uid://bx6iaw1xwf26u" path="res://assets/Sounds/NormalSwap.ogg" id="3_nf7h6"]
+[ext_resource type="AudioStream" uid="uid://bjqur35nw5p3k" path="res://assets/Sounds/InvalidMove.ogg" id="5_my8s2"]
+[ext_resource type="AudioStream" uid="uid://gessuidicmem" path="res://assets/Sounds/PoweredSwap.ogg" id="6_2e0id"]
+[ext_resource type="AudioStream" uid="uid://bduckehrpbe0g" path="res://assets/Sounds/4.ogg" id="7_my8s2"]
+[ext_resource type="AudioStream" uid="uid://mwmnlylp4yw" path="res://assets/Sounds/5.ogg" id="8_2e0id"]
+
+[node name="AudioController" type="Node2D" unique_id=1147757710]
+script = ExtResource("1_5dt40")
+
+[node name="piece_match1" type="AudioStreamPlayer" parent="." unique_id=1418289728]
+stream = ExtResource("2_12scf")
+
+[node name="piece_swap" type="AudioStreamPlayer" parent="." unique_id=725071981]
+stream = ExtResource("3_nf7h6")
+volume_db = -11.143
+
+[node name="soundtrack4" type="AudioStreamPlayer" parent="." unique_id=1168012106]
+stream = ExtResource("1_41o6r")
+
+[node name="piece_!swap" type="AudioStreamPlayer" parent="." unique_id=573856633]
+stream = ExtResource("5_my8s2")
+
+[node name="piece_swap+" type="AudioStreamPlayer" parent="." unique_id=1533932323]
+stream = ExtResource("6_2e0id")
+
+[node name="piece_match2" type="AudioStreamPlayer" parent="." unique_id=412186791]
+stream = ExtResource("7_my8s2")
+
+[node name="piece_match3" type="AudioStreamPlayer" parent="." unique_id=10349394]
+stream = ExtResource("8_2e0id")

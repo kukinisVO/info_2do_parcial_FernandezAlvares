@@ -1,6 +1,7 @@
 extends Node2D
 
 @export var color: String
+@onready var sfx_match: AudioStreamPlayer = $sfx_match
 
 var matched = false
 
@@ -16,3 +17,7 @@ func move(target):
 
 func dim():
 	$Sprite2D.modulate = Color(1, 1, 1, 0.5)
+
+func sfx_play():
+	sfx_match.play()
+	print('ping')

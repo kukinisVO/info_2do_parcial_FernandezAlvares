@@ -50,7 +50,11 @@ var is_controlling = false
 #   signal game_finished(gano: bool)
 # TODO (PARCIAL · B1/B2): declara aquí el puntaje y el contador (y sus señales, si las usas).
 
-
+#propio calls
+@onready var audio_controller : Node2D = get_node("../AudioController")
+##combo
+var current_combo = 0
+var combo = false
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	state = MOVE
@@ -220,18 +224,20 @@ func destroy_matched():
 	var was_matched = false
 	for i in width:
 		for j in height:
-			if all_pieces[i][j] != null and all_pieces[i][j].matched:
+			var piece = all_pieces[i][j]
+			if piece != null and piece.matched:
 				was_matched = true
-				# TODO (PARCIAL · B1): suma puntaje por cada pieza destruida (o por
-				# combinación) y emite score_changed para actualizar el HUD.
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
-
+	
 	move_checked = true
 	if was_matched:
 		collapse_timer.start()
+		if current_combo == 0:
+			audio_controller.sfx_swap("normal")
 	else:
 		swap_back()
+		audio_controller.sfx_swap("invalid")
 
 func collapse_columns():
 	for i in width:
@@ -275,6 +281,9 @@ func check_after_refill():
 		for j in height:
 			if all_pieces[i][j] != null and match_at(i, j, all_pieces[i][j].color):
 				find_matches()
+				current_combo+=1
+				print("combo! :", current_combo)
+				audio_controller.sfx_match(current_combo)
 				destroy_timer.start()
 				return
 	# El tablero quedó estable: no hay más combinaciones en cascada.
@@ -282,6 +291,7 @@ func check_after_refill():
 	# (puntaje meta, piezas recolectadas, etc.) y dispara victoria o derrota.
 	# TODO (PARCIAL · M2): comprueba si todavía existe alguna jugada válida; si no,
 	# rebaraja el tablero hasta que haya al menos una.
+	current_combo=0
 	state = MOVE
 	move_checked = false
 
