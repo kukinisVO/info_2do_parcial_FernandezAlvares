@@ -6,22 +6,22 @@
 [ext_resource type="Script" uid="uid://biuagxx08tqcb" path="res://scripts/grid.gd" id="4_4jr62"]
 [ext_resource type="PackedScene" uid="uid://tj73f3von03j" path="res://scenes/audio_controller.tscn" id="5_iywne"]
 
-[node name="Game" type="Node2D" unique_id=1829699015]
+[node name="Game" type="Node2D" unique_id=886759947]
 
-[node name="background" type="TextureRect" parent="." unique_id=681168826]
+[node name="background" type="TextureRect" parent="." unique_id=704833246]
 offset_right = 576.0
 offset_bottom = 1024.0
 texture = ExtResource("1_blg2x")
 
-[node name="top_ui" parent="." unique_id=192226972 instance=ExtResource("2_wrbvl")]
+[node name="top_ui" parent="." unique_id=2045190184 instance=ExtResource("2_wrbvl")]
 
-[node name="bottom_ui" type="TextureRect" parent="." unique_id=1877235409]
+[node name="bottom_ui" type="TextureRect" parent="." unique_id=75448770]
 offset_top = 928.0
 offset_right = 576.0
 offset_bottom = 1020.0
 texture = ExtResource("3_jy0d4")
 
-[node name="grid" type="Node2D" parent="." unique_id=1212640092]
+[node name="grid" type="Node2D" parent="." unique_id=379274858]
 script = ExtResource("4_4jr62")
 width = 8
 height = 10
@@ -30,15 +30,15 @@ y_start = 800
 offset = 64
 y_offset = 2
 
-[node name="destroy_timer" type="Timer" parent="grid" unique_id=1315425384]
+[node name="destroy_timer" type="Timer" parent="grid" unique_id=1592903008]
 wait_time = 0.5
 one_shot = true
 
-[node name="collapse_timer" type="Timer" parent="grid" unique_id=835354444]
+[node name="collapse_timer" type="Timer" parent="grid" unique_id=579774509]
 wait_time = 0.5
 one_shot = true
 
-[node name="refill_timer" type="Timer" parent="grid" unique_id=154372309]
+[node name="refill_timer" type="Timer" parent="grid" unique_id=1089072306]
 wait_time = 0.5
 one_shot = true
 
@@ -47,3 +47,5 @@ one_shot = true
 [connection signal="timeout" from="grid/destroy_timer" to="grid" method="_on_destroy_timer_timeout"]
 [connection signal="timeout" from="grid/collapse_timer" to="grid" method="_on_collapse_timer_timeout"]
 [connection signal="timeout" from="grid/refill_timer" to="grid" method="_on_refill_timer_timeout"]
+
+[editable path="top_ui"]
