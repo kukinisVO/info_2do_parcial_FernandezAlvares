@@ -4,6 +4,9 @@
 [ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="2_vrsc2"]
 [ext_resource type="Script" uid="uid://d180fiew72vj5" path="res://scripts/game_menu.gd" id="2_ysvk1"]
 
+[sub_resource type="QuadMesh" id="QuadMesh_ysvk1"]
+size = Vector2(576, 1024)
+
 [node name="Game_Menu" type="TextureRect" unique_id=1188753867]
 offset_right = 576.0
 offset_bottom = 1024.0
@@ -55,6 +58,12 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("2_vrsc2")
 theme_override_font_sizes/font_size = 30
 text = "SETTINGS"
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1600110337]
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="CanvasLayer" unique_id=1532085451]
+position = Vector2(-445, 499)
+mesh = SubResource("QuadMesh_ysvk1")
 
 [connection signal="button_up" from="VBoxContainer/button_play" to="." method="_on_button_play_button_up"]
 [connection signal="button_up" from="VBoxContainer/button_selectlevel" to="." method="_on_button_selectlevel_button_up"]
