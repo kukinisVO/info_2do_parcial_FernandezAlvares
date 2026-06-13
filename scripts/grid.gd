@@ -61,7 +61,7 @@ var combo = false
 enum Objetivo { SCORE, COLOR}
 
 @export var level_data: LevelConfig
-var level_index: int = 1
+var level_index: int = 2
 var score: int = 0
 var counted: int = 0
 var objective_name: String
@@ -80,8 +80,16 @@ func _ready():
 	all_pieces = make_2d_array()
 	spawn_pieces()
 
+func level_up():
+	level_index = ((level_index + 1) % levels.size()) + 1
+	set_level()
+	state = MOVE
+	randomize()
+	all_pieces = make_2d_array()
+	spawn_pieces()
+
 func set_level():
-	level_data = levels.get([level_index])
+	level_data = levels.get(level_index)
 	set_level_data()
 	init_labels.emit(objective_type,score, moves_limit, objective_value, objective_color)
 
@@ -279,7 +287,7 @@ func destroy_matched():
 		score_changed.emit(score)
 		if score >= objective_value:
 			game_over()
-		return
+			return
 		collapse_timer.start()
 		if current_combo == 0:
 			audio_controller.sfx_swap("normal")
