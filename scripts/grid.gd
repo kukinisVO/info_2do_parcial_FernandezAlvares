@@ -13,15 +13,17 @@ var state
 @export var offset: int
 @export var y_offset: int
 
-# piece array
-var possible_pieces = [
-	preload("res://scenes/blue_piece.tscn"),
-	preload("res://scenes/green_piece.tscn"),
-	preload("res://scenes/light_green_piece.tscn"),
-	preload("res://scenes/pink_piece.tscn"),
-	preload("res://scenes/yellow_piece.tscn"),
-	preload("res://scenes/orange_piece.tscn"),
-]
+# pieces
+var color_pieces = {
+	"blue": preload("res://scenes/blue_piece.tscn"),
+	"green":preload("res://scenes/green_piece.tscn"),
+	"light_green":preload("res://scenes/light_green_piece.tscn"),
+	"pink":preload("res://scenes/pink_piece.tscn"),
+	"yellow":preload("res://scenes/yellow_piece.tscn"),
+	"orange":preload("res://scenes/orange_piece.tscn"),
+}
+
+var possible_pieces = []
 # current pieces in scene
 var all_pieces = []
 
@@ -55,18 +57,26 @@ var game_finished: bool = false
 var victory_overlay = preload("res://scenes/victory_popup.tscn")
 var defeat_overlay = preload("res://scenes/defeat_popup.tscn")
 var current_combo = 0
+var combo = false
 
-## andre calls
+const SAVE_FILE := "user://saves.json"
+
 @export var levels  = {
 	1 : load("res://levels/1.tres"),
 	2 : load("res://levels/2.tres"),
-	3 : load("res://levels/3.tres")
+	3 : load("res://levels/3.tres"),
+	4 : load("res://levels/4.tres"),
+	5 : load("res://levels/5.tres"),
+	6 : load("res://levels/6.tres")
 }
 enum Objetivo { SCORE, COLOR}
 
+@onready var camera = $".".get_parent().get_node("Camera2D")
 @export var level_data: LevelConfig
-var level_index: int = 2
+var level_index: int = 1
+var highest_level: int = 1
 var score: int = 0
+var best_score: int = 0
 var counted: int = 0
 var objective_name: String
 var objective_type
@@ -78,13 +88,14 @@ var available_colors
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	load_progress()
 	set_level()
 	state = MOVE
-	randomize()
+	seed(generate_daily_seed(level_index))
 	all_pieces = make_2d_array()
 	spawn_pieces()
 	
-func _process(delta):
+func _process(_delta):
 	if state == MOVE:
 		touch_input()
 	if Input.is_key_pressed(KEY_R):
@@ -93,14 +104,36 @@ func _process(delta):
 			restart_grid()
 	if Input.is_key_pressed(KEY_T):
 		imposibilizar_grid()
-		
-		
-#region M1. Sistema Ojetivos
+
+func generate_daily_seed(level: int) -> int:
+	var date = Time.get_date_dict_from_system()
+	var day_seed = (
+		date.year * 10000 +
+		date.month * 100 +
+		date.day
+	)
+
+	return hash(str(day_seed) + "_" + str(level))
+
+func level_retry():
+	level_index -=1
+	level_up()
+
 func level_up():
 	state = WAIT
+	save_progress()
 	var overlays = get_tree().get_nodes_in_group("game_overlays")
 	for overlay in overlays:
 		overlay.queue_free()
+	reset()
+	await get_tree().process_frame
+	if level_index >= levels.size():
+		game_finished = true
+		game_over()
+		return
+	level_index +=1
+	highest_level = max(highest_level, level_index)
+	
 	set_level()
 	
 		# Reset game variables
@@ -121,6 +154,10 @@ func level_up():
 		
 	restart_grid()
 	state = MOVE
+	seed(generate_daily_seed(level_index))
+	all_pieces = make_2d_array()
+	spawn_pieces()
+	
 
 func set_level():
 	level_data = levels.get(level_index)
@@ -128,6 +165,7 @@ func set_level():
 	init_labels.emit(objective_type,score, moves_limit, objective_value, objective_color)
 
 func set_level_data():
+	possible_pieces.clear()
 	objective_name = level_data.name
 	objective_type = level_data.type
 	objective_value = level_data.value
@@ -136,9 +174,9 @@ func set_level_data():
 	moves_limit = level_data.moves_limit
 	counted = moves_limit
 	available_colors = level_data.available_colors
-#endregion
-
-#region helper functions
+	for color in available_colors:
+		possible_pieces.append(color_pieces.get(color))
+	
 func make_2d_array():
 	var array = []
 	for i in width:
@@ -198,9 +236,6 @@ func store_info(first_piece, other_piece, place, direction):
 	last_place = place
 	last_direction = direction
 	
-#endregion
-
-#region main gameplay functions + M3
 func touch_input():
 	var mouse_pos = get_global_mouse_position()
 	var grid_pos = pixel_to_grid(mouse_pos.x, mouse_pos.y)
@@ -235,9 +270,9 @@ func swap_pieces(column, row, direction: Vector2):
 	# TODO (PARCIAL · M3): si alguna de las piezas intercambiadas es especial,
 	# actívala aquí (su efecto reemplaza a la búsqueda normal de combinaciones).
 	if not move_checked:
+		find_matches()
 		counted -= 1
 		counter_changed.emit(counted, moves_limit)
-		find_matches()
 
 func swap_back():
 	if piece_one != null and piece_two != null:
@@ -258,6 +293,7 @@ func touch_difference(grid_1, grid_2):
 			swap_pieces(grid_1.x, grid_1.y, Vector2(0, 1))
 		elif difference.y < 0:
 			swap_pieces(grid_1.x, grid_1.y, Vector2(0, -1))
+
 
 func find_matches():
 	var horizontal_lines = []
@@ -372,8 +408,7 @@ func destroy_matched():
 	
 	for i in width:
 		for j in height:
-			var piece = all_pieces[i][j]
-			if piece != null and piece.matched:
+			if all_pieces[i][j] != null and all_pieces[i][j].matched:
 				was_matched = true
 				matched += 1
 				if objective_type == Objetivo.COLOR and all_pieces[i][j].color == objective_color:
@@ -383,24 +418,21 @@ func destroy_matched():
 	
 	move_checked = true
 	if was_matched:
+		if current_combo == 0:
+			audio_controller.sfx_swap("normal")
 		if objective_type == Objetivo.COLOR:
 			score += color_matched
 		else: 
 			score += matched * points_per_unit
 		score_changed.emit(score)
 		if score >= objective_value:
-			game_finished=true	
-			game_over()
+			level_up()
 			return
 		collapse_timer.start()
-		if current_combo == 0:
-			audio_controller.sfx_swap("normal")
 	else:
 		swap_back()
 		audio_controller.sfx_swap("invalid")
-#endregion
 
-#region grid_physics and refill
 func collapse_columns():
 	for i in width:
 		for j in height:
@@ -444,24 +476,18 @@ func check_after_refill():
 			if all_pieces[i][j] != null and match_at(i, j, all_pieces[i][j].color):
 				find_matches()
 				current_combo+=1
+				camera.shake(8 + current_combo * 5)
 				print("combo! :", current_combo)
 				audio_controller.sfx_match(current_combo)
 				destroy_timer.start()
 				return
 	if score >= objective_value:
-		game_finished=true	
-		game_over()
+		level_up()
 		return
 	if counted <= 0:
 		game_finished=false
 		game_over()
 		return
-		# El tablero quedó estable: no hay más combinaciones en cascada.
-	# TODO (PARCIAL · M1): verifica si se cumplió o falló el objetivo del nivel
-	# (puntaje meta, piezas recolectadas, etc.) y dispara victoria o derrota.
-	# TODO (PARCIAL · M2): comprueba si todavía existe alguna jugada válida; si no,
-	# rebaraja el tablero hasta que haya al menos una.
-	# Board is stable, check if there are valid moves
 	current_combo=0
 	
 	if not hay_jugadas_validas():
@@ -470,9 +496,6 @@ func check_after_refill():
 	else:
 		state = MOVE
 		move_checked = false
-#endregion
-
-#region M2. Detección de bloqueo + rebarajado
 
 func restart_grid():
 	# Clear grid
@@ -578,8 +601,6 @@ func check_position_for_match(x, y) -> bool:
 	return vertical_length >= 3
 
 func imposibilizar_grid():
-
-	# Limpiar tablero
 	for i in width:
 		for j in height:
 			if all_pieces[i][j] != null:
@@ -622,29 +643,60 @@ func _on_refill_timer_timeout():
 
 #region game over functions
 func game_over():
-	counted = moves_limit
+	print("GAMEOVER")
 	state = WAIT
-	
-	# Choose which overlay to show
 	var overlay_to_show = victory_overlay if game_finished else defeat_overlay
 	var overlay_instance = overlay_to_show.instantiate()
 	overlay_instance.add_to_group("game_overlays")
-	
 	if overlay_instance.has_signal("next_level"):
-		overlay_instance.next_level.connect(_on_next_level)
+		overlay_instance.next_level.connect(level_up)
 	if overlay_instance.has_signal("retry_level"):
-		overlay_instance.retry_level.connect(level_up)
+		overlay_instance.retry_level.connect(level_retry)
 	if overlay_instance.has_signal("menu_pressed"):
 		overlay_instance.menu_pressed.connect(_on_overlay_closed)
-
 	get_tree().root.add_child(overlay_instance)
+	save_progress()
+	reset()
+	await get_tree().process_frame
 
-func _on_next_level():
-	level_index = ((level_index + 1) % levels.size()) + 1
-	level_up()
-	
 func _on_overlay_closed():
 	queue_free()
-	# TODO (PARCIAL · M4): guarda el progreso (nivel alcanzado) y el mejor puntaje
-	# en disco (user://) para conservarlos entre sesiones.
-#endregion
+
+func save_progress():
+	var data = {
+		"highest_level": highest_level,
+		"current_level":level_index,
+		"best_score": best_score
+	}
+	var file = FileAccess.open(SAVE_FILE, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(data))
+		file.close()
+
+func load_progress():
+	if not FileAccess.file_exists(SAVE_FILE):
+		return 
+	var file = FileAccess.open(SAVE_FILE, FileAccess.READ)
+	if file == null:
+		return 
+	var json_text = file.get_as_text()
+	file.close()
+	var json = JSON.new()
+	if json.parse(json_text) == OK:
+		var data = json.data
+		highest_level = data.get("highest_level", 1)
+		var current_level = data.get("current_level", 1)
+		level_index = current_level
+		best_score = data.get("best_score", 0)
+		print(level_index)
+		print(best_score)
+
+func reset():
+	best_score = max(score, best_score)
+	score = 0
+	move_checked = false
+	piece_one = null
+	piece_two = null
+	current_combo = 0
+	restart_grid()
+	
