@@ -13,6 +13,7 @@ offset_right = 4.879944
 offset_bottom = 619.496
 color = Color(0.2313286, 0.069063365, 0.0721718, 1)
 script = ExtResource("1_4ct37")
+game_menu_path = "res://scenes/game_menu.tscn"
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1268343714]
 top_level = true
@@ -29,7 +30,8 @@ offset_bottom = 3.9500122
 rotation = -0.033161256
 color = Color(0, 0, 0, 0.5058824)
 
-[node name="next_level_defeat" type="TextureButton" parent="ColorRect" unique_id=1008848881]
+[node name="retry_level_defeat" type="TextureButton" parent="ColorRect" unique_id=1008848881]
+modulate = Color(0.9490196, 0, 0.13725491, 1)
 layout_mode = 0
 offset_left = 91.674995
 offset_top = 162.12863
@@ -39,22 +41,22 @@ texture_normal = ExtResource("2_hme24")
 ignore_texture_size = true
 stretch_mode = 0
 
-[node name="Label" type="Label" parent="ColorRect/next_level_defeat" unique_id=1444872190]
+[node name="Label" type="Label" parent="ColorRect/retry_level_defeat" unique_id=1444872190]
 layout_mode = 0
 offset_left = 5.930386
 offset_top = 2.1978645
 offset_right = 199.20747
 offset_bottom = 86.19786
-theme_override_colors/font_color = Color(0.14901961, 0, 0.41568628, 1)
+theme_override_colors/font_color = Color(0.16912033, 0.30383927, 0.16912033, 1)
 theme_override_constants/line_spacing = -8
 theme_override_fonts/font = ExtResource("3_ub3ms")
 theme_override_font_sizes/font_size = 30
-text = "NEXT
-LEVEL"
+text = "RETRY"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="back_menu_defeat" type="TextureButton" parent="ColorRect" unique_id=1392523777]
+modulate = Color(0.9490196, 0, 0.13725491, 1)
 layout_mode = 0
 offset_left = 369.88687
 offset_top = 160.35182
@@ -90,5 +92,5 @@ theme_override_fonts/font = ExtResource("3_ub3ms")
 theme_override_font_sizes/font_size = 70
 text = "DEFEAT"
 
-[connection signal="button_up" from="ColorRect/next_level_defeat" to="." method="_on_next_level_defeat_button_up"]
+[connection signal="pressed" from="ColorRect/retry_level_defeat" to="." method="_on_retry_level_defeat_pressed"]
 [connection signal="button_up" from="ColorRect/back_menu_defeat" to="." method="_on_back_menu_defeat_button_up"]

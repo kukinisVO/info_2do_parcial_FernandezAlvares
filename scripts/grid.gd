@@ -1,5 +1,6 @@
 extends Node2D
 
+#region variables
 # state machine
 enum {WAIT, MOVE}
 var state
@@ -37,6 +38,7 @@ var move_checked = false
 var first_touch = Vector2.ZERO
 var final_touch = Vector2.ZERO
 var is_controlling = false
+#endregion
 
 # === Temporizadores del ciclo destruir → colapsar → rellenar ===
 # Son nodos hijos de "grid"; el editor conecta sus señales "timeout" a este script.
@@ -48,11 +50,12 @@ var is_controlling = false
 signal score_changed(nuevo_puntaje: int)
 signal counter_changed(restantes: int, total:int)
 signal init_labels(type:int, base_score:int, limit:int, value:int, color:String)  
-#signal game_finished(gano: bool)
+var game_finished: bool = false
 
 #propio calls
 @onready var audio_controller : Node2D = get_node("../AudioController")
-##combo
+var victory_overlay = preload("res://scenes/victory_popup.tscn")
+var defeat_overlay = preload("res://scenes/defeat_popup.tscn")
 var current_combo = 0
 var combo = false
 
@@ -90,8 +93,24 @@ func _ready():
 	randomize()
 	all_pieces = make_2d_array()
 	spawn_pieces()
-
+	
+func _process(delta):
+	if state == MOVE:
+		touch_input()
+	if Input.is_key_pressed(KEY_R):
+		if not hay_jugadas_validas():
+			print("Tablero bloqueado")
+			restart_grid()
+	if Input.is_key_pressed(KEY_T):
+		imposibilizar_grid()
+		
+		
+#region M1. Sistema Ojetivos
 func level_up():
+	state = WAIT
+	var overlays = get_tree().get_nodes_in_group("game_overlays")
+	for overlay in overlays:
+		overlay.queue_free()
 	if level_index >= levels.size():
 		level_index = 0 #until we use the winning screen
 		#game_over()
@@ -102,6 +121,24 @@ func level_up():
 	await get_tree().process_frame
 	save_progress()
 	set_level()
+	
+		# Reset game variables
+	score = 0
+	score_changed.emit(score)
+	current_combo = 0
+	move_checked = false
+	piece_one = null
+	piece_two = null
+	
+		# Stop any running timers
+	if destroy_timer.is_stopped() == false:
+		destroy_timer.stop()
+	if collapse_timer.is_stopped() == false:
+		collapse_timer.stop()
+	if refill_timer.is_stopped() == false:
+		refill_timer.stop()
+		
+	restart_grid()
 	state = MOVE
 	randomize()
 	all_pieces = make_2d_array()
@@ -179,7 +216,16 @@ func match_at(i, j, color):
 			if all_pieces[i][j - 1].color == color and all_pieces[i][j - 2].color == color:
 				return true
 	return false
+	
+func store_info(first_piece, other_piece, place, direction):
+	piece_one = first_piece
+	piece_two = other_piece
+	last_place = place
+	last_direction = direction
+	
+#endregion
 
+#region main gameplay functions + M3
 func touch_input():
 	var mouse_pos = get_global_mouse_position()
 	var grid_pos = pixel_to_grid(mouse_pos.x, mouse_pos.y)
@@ -195,6 +241,7 @@ func touch_input():
 
 func swap_pieces(column, row, direction: Vector2):
 	if counted <= 0:
+		game_finished=false
 		game_over()
 		return
 	var first_piece = all_pieces[column][row]
@@ -216,12 +263,6 @@ func swap_pieces(column, row, direction: Vector2):
 		find_matches()
 		counted -= 1
 		counter_changed.emit(counted, moves_limit)
-
-func store_info(first_piece, other_piece, place, direction):
-	piece_one = first_piece
-	piece_two = other_piece
-	last_place = place
-	last_direction = direction
 
 func swap_back():
 	if piece_one != null and piece_two != null:
@@ -248,50 +289,116 @@ func _process(_delta):
 		touch_input()
 
 func find_matches():
+	var horizontal_lines = []
+	var vertical_lines = []
 	# TODO (PARCIAL · M3): aquí es donde se decide qué piezas forman cada combinación.
 	# Para crear piezas especiales necesitas conocer el LARGO de cada línea: una de 4
 	# genera una pieza de línea (fila/columna) y una de 5 una bomba de color. El chequeo
 	# actual solo mira el "centro" de tríos; probablemente tengas que recorrer las
-	# líneas completas para distinguir combinaciones de 3, 4 y 5.
-	for i in width:
-		for j in height:
+	# líneas completas para distinguir combinaciones de 3, 4 y 5
+
+	for j in height:
+		var i = 0
+		while i < width:
 			if all_pieces[i][j] != null:
 				var current_color = all_pieces[i][j].color
-				# detect horizontal matches
-				if (
-					i > 0 and i < width -1 
-					and 
-					all_pieces[i - 1][j] != null and all_pieces[i + 1][j]
-					and 
-					all_pieces[i - 1][j].color == current_color and all_pieces[i + 1][j].color == current_color
-				):
-					all_pieces[i - 1][j].matched = true
-					all_pieces[i - 1][j].dim()
-					all_pieces[i][j].matched = true
-					all_pieces[i][j].dim()
-					all_pieces[i + 1][j].matched = true
-					all_pieces[i + 1][j].dim()
-				# detect vertical matches
-				if (
-					j > 0 and j < height -1 
-					and 
-					all_pieces[i][j - 1] != null and all_pieces[i][j + 1]
-					and 
-					all_pieces[i][j - 1].color == current_color and all_pieces[i][j + 1].color == current_color
-				):
-					all_pieces[i][j - 1].matched = true
-					all_pieces[i][j - 1].dim()
-					all_pieces[i][j].matched = true
-					all_pieces[i][j].dim()
-					all_pieces[i][j + 1].matched = true
-					all_pieces[i][j + 1].dim()
-					
-	destroy_timer.start()	
+					# detect horizontal matches
+				var match_length = 1
+				var k = i + 1
+				while k < width and all_pieces[k][j] != null and all_pieces[k][j].color == current_color:
+					match_length += 1
+					k += 1
+				
+				if match_length >= 3:
+					var match_pieces = []
+					for x in range(i, i + match_length):
+						match_pieces.append(Vector2(x, j))
+					horizontal_lines.append({"pieces": match_pieces, "color": current_color, "length": match_length})
+				
+				i += match_length
+			else:
+				i += 1
+	
+	# detect vertical matches
+	for i in width:
+		var j = 0
+		while j < height:
+			if all_pieces[i][j] != null:
+				var current_color = all_pieces[i][j].color
+				var match_length = 1
+				var k = j + 1
+				while k < height and all_pieces[i][k] != null and all_pieces[i][k].color == current_color:
+					match_length += 1
+					k += 1
+				
+				if match_length >= 3:
+					var match_pieces = []
+					for y in range(j, j + match_length):
+						match_pieces.append(Vector2(i, y))
+					vertical_lines.append({"pieces": match_pieces, "color": current_color, "length": match_length})
+				
+				j += match_length
+			else:
+				j += 1
+	
+	process_match_lines(horizontal_lines)
+	process_match_lines(vertical_lines)
+	
+	destroy_timer.start()
 
+func process_match_lines(lines):
+	for line in lines:
+		var length = line["length"]
+		var color = line["color"]
+		var pieces = line["pieces"]
+		
+		match length:
+			3:
+				for pos in pieces:
+					if all_pieces[pos.x][pos.y] != null:
+						all_pieces[pos.x][pos.y].matched = true
+						all_pieces[pos.x][pos.y].dim()
+			
+			4:
+				# Check if horizontal or vertical
+				if pieces[0].y == pieces[1].y: 
+					var row = pieces[0].y
+					for x in range(width):
+						if all_pieces[x][row] != null:
+							all_pieces[x][row].matched = true
+							all_pieces[x][row].dim()
+					audio_controller.sfx_match(4)
+				else:
+					var column = pieces[0].x
+					for y in range(height):
+						if all_pieces[column][y] != null:
+							all_pieces[column][y].matched = true
+							all_pieces[column][y].dim()
+					audio_controller.sfx_match(4)
+			
+			5:
+				for x in range(width):
+					for y in range(height):
+						if all_pieces[x][y] != null and all_pieces[x][y].color == color:
+							all_pieces[x][y].matched = true
+							all_pieces[x][y].dim()
+				audio_controller.sfx_match(5)
+	
 func destroy_matched():
 	var was_matched = false
 	var matched:int = 0
 	var color_matched:int = 0
+	
+	var special_pieces = []
+	for i in width:
+		for j in height:
+			var piece = all_pieces[i][j]
+			if piece != null and piece.matched and piece.is_special:
+				special_pieces.append({"piece": piece, "i": i, "j": j})
+	
+	for sp in special_pieces:
+		sp.piece.on_destroyed(self, sp.i, sp.j)
+	
 	for i in width:
 		for j in height:
 			if all_pieces[i][j] != null and all_pieces[i][j].matched:
@@ -301,6 +408,7 @@ func destroy_matched():
 					color_matched +=1
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
+	
 	move_checked = true
 	if was_matched:
 		if objective_type == Objetivo.COLOR:
@@ -317,7 +425,9 @@ func destroy_matched():
 	else:
 		swap_back()
 		audio_controller.sfx_swap("invalid")
+#endregion
 
+#region grid_physics and refill
 func collapse_columns():
 	for i in width:
 		for j in height:
@@ -369,13 +479,163 @@ func check_after_refill():
 		level_up()
 		return
 	if counted <= 0:
+		game_finished=false
 		game_over()
 		return
+		# El tablero quedó estable: no hay más combinaciones en cascada.
+	# TODO (PARCIAL · M1): verifica si se cumplió o falló el objetivo del nivel
+	# (puntaje meta, piezas recolectadas, etc.) y dispara victoria o derrota.
 	# TODO (PARCIAL · M2): comprueba si todavía existe alguna jugada válida; si no,
 	# rebaraja el tablero hasta que haya al menos una.
+	# Board is stable, check if there are valid moves
 	current_combo=0
+	
+	if not hay_jugadas_validas():
+		print("No valid moves available. Restarting grid...")
+		restart_grid()
+	else:
+		state = MOVE
+		move_checked = false
+#endregion
+
+#region M2. Detección de bloqueo + rebarajado
+
+func restart_grid():
+	# Clear grid
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] != null:
+				all_pieces[i][j].queue_free()
+				all_pieces[i][j] = null
+	
+	# Reset variables
 	state = MOVE
 	move_checked = false
+	current_combo = 0
+	piece_one = null
+	piece_two = null
+	
+	spawn_pieces()
+	
+	# This starts the board match-free
+	await get_tree().process_frame 
+	find_matches() 
+
+func hay_jugadas_validas() -> bool:
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] == null:
+				continue
+			
+			# Check horizontal swap
+			if i < width - 1 and all_pieces[i + 1][j] != null:
+				if would_create_match(i, j, Vector2(1, 0)):
+					return true
+			
+			# Check vertical swap
+			if j < height - 1 and all_pieces[i][j + 1] != null:
+				if would_create_match(i, j, Vector2(0, 1)):
+					return true
+	print('Es un tablero sin swaps posibles')
+	return false
+
+func would_create_match(column, row, direction: Vector2) -> bool:
+	var target_x = column + direction.x
+	var target_y = row + direction.y
+	
+	# Temporal swap 
+	var first_piece = all_pieces[column][row]
+	var second_piece = all_pieces[target_x][target_y]
+	
+	all_pieces[column][row] = second_piece
+	all_pieces[target_x][target_y] = first_piece
+	
+	# Check any match
+	var has_match = false
+	
+	# Check around the swapped positions for matches
+	if check_position_for_match(target_x, target_y):
+		has_match = true
+	
+	if check_position_for_match(column, row):
+		has_match = true
+	
+	# Swap back
+	all_pieces[column][row] = first_piece
+	all_pieces[target_x][target_y] = second_piece
+	
+	return has_match
+
+func check_position_for_match(x, y) -> bool:
+	if all_pieces[x][y] == null:
+		return false
+	
+	var color = all_pieces[x][y].color
+	
+	# Check horizontal line
+	var horizontal_length = 1
+	# Check right
+	var i = x + 1
+	while i < width and all_pieces[i][y] != null and all_pieces[i][y].color == color:
+		horizontal_length += 1
+		i += 1
+	# Check left
+	i = x - 1
+	while i >= 0 and all_pieces[i][y] != null and all_pieces[i][y].color == color:
+		horizontal_length += 1
+		i -= 1
+	
+	if horizontal_length >= 3:
+		return true
+	
+	# Check vertical line
+	var vertical_length = 1
+	# Check down
+	var j = y + 1
+	while j < height and all_pieces[x][j] != null and all_pieces[x][j].color == color:
+		vertical_length += 1
+		j += 1
+	# Check up
+	j = y - 1
+	while j >= 0 and all_pieces[x][j] != null and all_pieces[x][j].color == color:
+		vertical_length += 1
+		j -= 1
+	
+	return vertical_length >= 3
+
+func imposibilizar_grid():
+
+	# Limpiar tablero
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] != null:
+				all_pieces[i][j].queue_free()
+				all_pieces[i][j] = null
+
+	# Necesitas al menos 4 colores
+	if possible_pieces.size() < 4:
+		push_error("Need at least 4 piece colors")
+		return
+
+	for i in width:
+		for j in height:
+
+			var index = (i + j) % 4
+
+			var piece = possible_pieces[index].instantiate()
+
+			add_child(piece)
+			piece.position = grid_to_pixel(i, j)
+
+			all_pieces[i][j] = piece
+
+	print("Forced unsolvable board")
+
+	if not hay_jugadas_validas():
+		print("Confirmed: no valid moves")
+	else:
+		print("Pattern unexpectedly has moves")
+#endregion
 
 func _on_destroy_timer_timeout():
 	destroy_matched()
@@ -385,15 +645,26 @@ func _on_collapse_timer_timeout():
 
 func _on_refill_timer_timeout():
 	refill_columns()
-	
+
+#region game over functions
 func game_over():
 	print("GAMEOVER")
 	state = WAIT
-	# TODO (PARCIAL · B3): muestra la pantalla final (victoria o derrota), detén la
-	# entrada del jugador y ofrece reiniciar la partida. Emite game_finished(gano).
+	var overlay_to_show = victory_overlay if game_finished else defeat_overlay
+	var overlay_instance = overlay_to_show.instantiate()
+	overlay_instance.add_to_group("game_overlays")
+	if overlay_instance.has_signal("next_level"):
+		overlay_instance.next_level.connect(_on_next_level)
+	if overlay_instance.has_signal("retry_level"):
+		overlay_instance.retry_level.connect(level_up)
+	if overlay_instance.has_signal("menu_pressed"):
+		overlay_instance.menu_pressed.connect(_on_overlay_closed)
+	get_tree().root.add_child(overlay_instance)
 	reset()
 	await get_tree().process_frame
 	save_progress()
+func _on_overlay_closed():
+	queue_free()
 
 func save_progress():
 	var data = {
@@ -434,6 +705,3 @@ func reset():
 	for piece in get_tree().get_nodes_in_group("pieces"):
 		piece.queue_free()
 	
-# TODO (PARCIAL · M2): funciones sugeridas para detectar el bloqueo del tablero.
-# func hay_jugadas_validas() -> bool:
-# func rebarajar() -> void:

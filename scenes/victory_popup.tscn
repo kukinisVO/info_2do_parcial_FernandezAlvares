@@ -12,6 +12,7 @@ anchor_bottom = 0.39600003
 offset_right = 4.879944
 offset_bottom = 619.496
 script = ExtResource("1_mmc2b")
+game_menu_path = "res://scenes/game_menu.tscn"
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1268343714]
 top_level = true
