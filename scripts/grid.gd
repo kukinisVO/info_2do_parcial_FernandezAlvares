@@ -178,47 +178,104 @@ func touch_difference(grid_1, grid_2):
 func _process(delta):
 	if state == MOVE:
 		touch_input()
+	if Input.is_key_pressed(KEY_R):
+		restart_grid()
 
 func find_matches():
+	var horizontal_lines = []
+	var vertical_lines = []
 	# TODO (PARCIAL · M3): aquí es donde se decide qué piezas forman cada combinación.
 	# Para crear piezas especiales necesitas conocer el LARGO de cada línea: una de 4
 	# genera una pieza de línea (fila/columna) y una de 5 una bomba de color. El chequeo
 	# actual solo mira el "centro" de tríos; probablemente tengas que recorrer las
-	# líneas completas para distinguir combinaciones de 3, 4 y 5.
-	for i in width:
-		for j in height:
+	# líneas completas para distinguir combinaciones de 3, 4 y 5
+
+	for j in height:
+		var i = 0
+		while i < width:
 			if all_pieces[i][j] != null:
 				var current_color = all_pieces[i][j].color
-				# detect horizontal matches
-				if (
-					i > 0 and i < width -1 
-					and 
-					all_pieces[i - 1][j] != null and all_pieces[i + 1][j]
-					and 
-					all_pieces[i - 1][j].color == current_color and all_pieces[i + 1][j].color == current_color
-				):
-					all_pieces[i - 1][j].matched = true
-					all_pieces[i - 1][j].dim()
-					all_pieces[i][j].matched = true
-					all_pieces[i][j].dim()
-					all_pieces[i + 1][j].matched = true
-					all_pieces[i + 1][j].dim()
-				# detect vertical matches
-				if (
-					j > 0 and j < height -1 
-					and 
-					all_pieces[i][j - 1] != null and all_pieces[i][j + 1]
-					and 
-					all_pieces[i][j - 1].color == current_color and all_pieces[i][j + 1].color == current_color
-				):
-					all_pieces[i][j - 1].matched = true
-					all_pieces[i][j - 1].dim()
-					all_pieces[i][j].matched = true
-					all_pieces[i][j].dim()
-					all_pieces[i][j + 1].matched = true
-					all_pieces[i][j + 1].dim()
-					
+					# detect horizontal matches
+				var match_length = 1
+				var k = i + 1
+				while k < width and all_pieces[k][j] != null and all_pieces[k][j].color == current_color:
+					match_length += 1
+					k += 1
+				
+				if match_length >= 3:
+					var match_pieces = []
+					for x in range(i, i + match_length):
+						match_pieces.append(Vector2(x, j))
+					horizontal_lines.append({"pieces": match_pieces, "color": current_color, "length": match_length})
+				
+				i += match_length
+			else:
+				i += 1
+	
+	# detect vertical matches
+	for i in width:
+		var j = 0
+		while j < height:
+			if all_pieces[i][j] != null:
+				var current_color = all_pieces[i][j].color
+				var match_length = 1
+				var k = j + 1
+				while k < height and all_pieces[i][k] != null and all_pieces[i][k].color == current_color:
+					match_length += 1
+					k += 1
+				
+				if match_length >= 3:
+					var match_pieces = []
+					for y in range(j, j + match_length):
+						match_pieces.append(Vector2(i, y))
+					vertical_lines.append({"pieces": match_pieces, "color": current_color, "length": match_length})
+				
+				j += match_length
+			else:
+				j += 1
+	
+	process_match_lines(horizontal_lines)
+	process_match_lines(vertical_lines)
+	
 	destroy_timer.start()
+
+func process_match_lines(lines):
+	for line in lines:
+		var length = line["length"]
+		var color = line["color"]
+		var pieces = line["pieces"]
+		
+		match length:
+			3:
+				for pos in pieces:
+					if all_pieces[pos.x][pos.y] != null:
+						all_pieces[pos.x][pos.y].matched = true
+						all_pieces[pos.x][pos.y].dim()
+			
+			4:
+				# Check if horizontal or vertical
+				if pieces[0].y == pieces[1].y: 
+					var row = pieces[0].y
+					for x in range(width):
+						if all_pieces[x][row] != null:
+							all_pieces[x][row].matched = true
+							all_pieces[x][row].dim()
+					audio_controller.sfx_match(4)
+				else:
+					var column = pieces[0].x
+					for y in range(height):
+						if all_pieces[column][y] != null:
+							all_pieces[column][y].matched = true
+							all_pieces[column][y].dim()
+					audio_controller.sfx_match(4)
+			
+			5:
+				for x in range(width):
+					for y in range(height):
+						if all_pieces[x][y] != null and all_pieces[x][y].color == color:
+							all_pieces[x][y].matched = true
+							all_pieces[x][y].dim()
+				audio_controller.sfx_match(5)
 	
 func destroy_matched():
 	var was_matched = false
@@ -286,14 +343,123 @@ func check_after_refill():
 				audio_controller.sfx_match(current_combo)
 				destroy_timer.start()
 				return
-	# El tablero quedó estable: no hay más combinaciones en cascada.
+		# El tablero quedó estable: no hay más combinaciones en cascada.
 	# TODO (PARCIAL · M1): verifica si se cumplió o falló el objetivo del nivel
 	# (puntaje meta, piezas recolectadas, etc.) y dispara victoria o derrota.
 	# TODO (PARCIAL · M2): comprueba si todavía existe alguna jugada válida; si no,
 	# rebaraja el tablero hasta que haya al menos una.
+	# Board is stable, check if there are valid moves
 	current_combo=0
+	
+	if not hay_jugadas_validas():
+		print("No valid moves available. Restarting grid...")
+		restart_grid()
+	else:
+		state = MOVE
+		move_checked = false
+
+func restart_grid():
+	# Clear grid
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] != null:
+				all_pieces[i][j].queue_free()
+				all_pieces[i][j] = null
+	
+	# Reset variables
 	state = MOVE
 	move_checked = false
+	current_combo = 0
+	piece_one = null
+	piece_two = null
+	
+	spawn_pieces()
+	
+	# This starts the board match-free
+	await get_tree().process_frame 
+	find_matches() 
+	
+func hay_jugadas_validas() -> bool:
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] == null:
+				continue
+			
+			# Check horizontal swap
+			if i < width - 1 and all_pieces[i + 1][j] != null:
+				if would_create_match(i, j, Vector2(1, 0)):
+					return true
+			
+			# Check vertical swap
+			if j < height - 1 and all_pieces[i][j + 1] != null:
+				if would_create_match(i, j, Vector2(0, 1)):
+					return true
+	
+	return false
+
+func would_create_match(column, row, direction: Vector2) -> bool:
+	var target_x = column + direction.x
+	var target_y = row + direction.y
+	
+	# Temporal swap 
+	var first_piece = all_pieces[column][row]
+	var second_piece = all_pieces[target_x][target_y]
+	
+	all_pieces[column][row] = second_piece
+	all_pieces[target_x][target_y] = first_piece
+	
+	# Check any match
+	var has_match = false
+	
+	# Check around the swapped positions for matches
+	if check_position_for_match(target_x, target_y):
+		has_match = true
+	
+	if check_position_for_match(column, row):
+		has_match = true
+	
+	# Swap back
+	all_pieces[column][row] = first_piece
+	all_pieces[target_x][target_y] = second_piece
+	
+	return has_match
+
+func check_position_for_match(x, y) -> bool:
+	if all_pieces[x][y] == null:
+		return false
+	
+	var color = all_pieces[x][y].color
+	
+	# Check horizontal line
+	var horizontal_length = 1
+	# Check right
+	var i = x + 1
+	while i < width and all_pieces[i][y] != null and all_pieces[i][y].color == color:
+		horizontal_length += 1
+		i += 1
+	# Check left
+	i = x - 1
+	while i >= 0 and all_pieces[i][y] != null and all_pieces[i][y].color == color:
+		horizontal_length += 1
+		i -= 1
+	
+	if horizontal_length >= 3:
+		return true
+	
+	# Check vertical line
+	var vertical_length = 1
+	# Check down
+	var j = y + 1
+	while j < height and all_pieces[x][j] != null and all_pieces[x][j].color == color:
+		vertical_length += 1
+		j += 1
+	# Check up
+	j = y - 1
+	while j >= 0 and all_pieces[x][j] != null and all_pieces[x][j].color == color:
+		vertical_length += 1
+		j -= 1
+	
+	return vertical_length >= 3
 
 func _on_destroy_timer_timeout():
 	destroy_matched()
