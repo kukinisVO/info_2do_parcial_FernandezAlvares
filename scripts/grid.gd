@@ -94,7 +94,7 @@ func _ready():
 	all_pieces = make_2d_array()
 	spawn_pieces()
 	
-func _process(delta):
+func _process(_delta):
 	if state == MOVE:
 		touch_input()
 	if Input.is_key_pressed(KEY_R):
@@ -104,21 +104,19 @@ func _process(delta):
 	if Input.is_key_pressed(KEY_T):
 		imposibilizar_grid()
 		
-		
-#region M1. Sistema Ojetivos
 func level_up():
 	state = WAIT
 	var overlays = get_tree().get_nodes_in_group("game_overlays")
 	for overlay in overlays:
 		overlay.queue_free()
-	if level_index >= levels.size():
-		level_index = 0 #until we use the winning screen
-		#game_over()
-		#return
-	level_index +=1
-	highest_level = max(highest_level, level_index)
 	reset()
 	await get_tree().process_frame
+	if level_index >= levels.size():
+		game_finished = true
+		game_over()
+		return
+	level_index +=1
+	highest_level = max(highest_level, level_index)
 	save_progress()
 	set_level()
 	
@@ -202,7 +200,6 @@ func spawn_pieces():
 			piece.position = grid_to_pixel(i, j)
 			# fill array with pieces
 			all_pieces[i][j] = piece
-			piece.add_to_group("pieces")
 
 func match_at(i, j, color):
 	# check left
@@ -223,9 +220,6 @@ func store_info(first_piece, other_piece, place, direction):
 	last_place = place
 	last_direction = direction
 	
-#endregion
-
-#region main gameplay functions + M3
 func touch_input():
 	var mouse_pos = get_global_mouse_position()
 	var grid_pos = pixel_to_grid(mouse_pos.x, mouse_pos.y)
@@ -284,9 +278,6 @@ func touch_difference(grid_1, grid_2):
 		elif difference.y < 0:
 			swap_pieces(grid_1.x, grid_1.y, Vector2(0, -1))
 
-func _process(_delta):
-	if state == MOVE:
-		touch_input()
 
 func find_matches():
 	var horizontal_lines = []
@@ -411,6 +402,8 @@ func destroy_matched():
 	
 	move_checked = true
 	if was_matched:
+		if current_combo == 0:
+			audio_controller.sfx_swap("normal")
 		if objective_type == Objetivo.COLOR:
 			score += color_matched
 		else: 
@@ -420,14 +413,10 @@ func destroy_matched():
 			level_up()
 			return
 		collapse_timer.start()
-		if current_combo == 0:
-			audio_controller.sfx_swap("normal")
 	else:
 		swap_back()
 		audio_controller.sfx_swap("invalid")
-#endregion
 
-#region grid_physics and refill
 func collapse_columns():
 	for i in width:
 		for j in height:
@@ -482,12 +471,6 @@ func check_after_refill():
 		game_finished=false
 		game_over()
 		return
-		# El tablero quedó estable: no hay más combinaciones en cascada.
-	# TODO (PARCIAL · M1): verifica si se cumplió o falló el objetivo del nivel
-	# (puntaje meta, piezas recolectadas, etc.) y dispara victoria o derrota.
-	# TODO (PARCIAL · M2): comprueba si todavía existe alguna jugada válida; si no,
-	# rebaraja el tablero hasta que haya al menos una.
-	# Board is stable, check if there are valid moves
 	current_combo=0
 	
 	if not hay_jugadas_validas():
@@ -496,9 +479,6 @@ func check_after_refill():
 	else:
 		state = MOVE
 		move_checked = false
-#endregion
-
-#region M2. Detección de bloqueo + rebarajado
 
 func restart_grid():
 	# Clear grid
@@ -604,8 +584,6 @@ func check_position_for_match(x, y) -> bool:
 	return vertical_length >= 3
 
 func imposibilizar_grid():
-
-	# Limpiar tablero
 	for i in width:
 		for j in height:
 			if all_pieces[i][j] != null:
@@ -654,7 +632,7 @@ func game_over():
 	var overlay_instance = overlay_to_show.instantiate()
 	overlay_instance.add_to_group("game_overlays")
 	if overlay_instance.has_signal("next_level"):
-		overlay_instance.next_level.connect(_on_next_level)
+		overlay_instance.next_level.connect(await level_up())
 	if overlay_instance.has_signal("retry_level"):
 		overlay_instance.retry_level.connect(level_up)
 	if overlay_instance.has_signal("menu_pressed"):
@@ -702,6 +680,5 @@ func reset():
 	piece_one = null
 	piece_two = null
 	current_combo = 0
-	for piece in get_tree().get_nodes_in_group("pieces"):
-		piece.queue_free()
+	imposibilizar_grid()
 	
