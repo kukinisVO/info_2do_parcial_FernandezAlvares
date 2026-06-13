@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://2y42s0c8yjej"]
+
+[ext_resource type="Texture2D" uid="uid://cdunkljd6up72" path="res://assets/bottom_ui.png" id="1_fioid"]
+[ext_resource type="Script" uid="uid://dvhqn32k0ihhr" path="res://scripts/victory_defeat_screens.gd" id="1_mmc2b"]
+[ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="2_8pm3f"]
+
+[node name="Victory_Popup" type="ColorRect" unique_id=741284219]
+modulate = Color(0, 0, 0.14901961, 0.18039216)
+anchors_preset = -1
+anchor_right = 0.99500006
+anchor_bottom = 0.39600003
+offset_right = 4.879944
+offset_bottom = 619.496
+script = ExtResource("1_mmc2b")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1268343714]
+top_level = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.061000004
+anchor_top = 0.37600002
+anchor_right = 1.1220001
+anchor_bottom = 0.68200004
+offset_left = -5.741997
+offset_top = 23.600006
+offset_right = -5.406433
+offset_bottom = 3.9500122
+rotation = -0.033161256
+color = Color(0, 0, 0, 0.5058824)
+
+[node name="next_level_victory" type="TextureButton" parent="ColorRect" unique_id=1008848881]
+layout_mode = 0
+offset_left = 91.674995
+offset_top = 162.12863
+offset_right = 300.03152
+offset_bottom = 249.25334
+texture_normal = ExtResource("1_fioid")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Label" type="Label" parent="ColorRect/next_level_victory" unique_id=1444872190]
+layout_mode = 0
+offset_left = 5.930386
+offset_top = 2.1978645
+offset_right = 199.20747
+offset_bottom = 86.19786
+theme_override_colors/font_color = Color(0.14901961, 0, 0.41568628, 1)
+theme_override_constants/line_spacing = -8
+theme_override_fonts/font = ExtResource("2_8pm3f")
+theme_override_font_sizes/font_size = 30
+text = "NEXT
+LEVEL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="back_menu_victory" type="TextureButton" parent="ColorRect" unique_id=1392523777]
+layout_mode = 0
+offset_left = 369.88687
+offset_top = 160.35182
+offset_right = 571.8833
+offset_bottom = 247.47653
+texture_normal = ExtResource("1_fioid")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Label" type="Label" parent="ColorRect/back_menu_victory" unique_id=1740990152]
+layout_mode = 0
+offset_left = 5.930386
+offset_top = 2.1978645
+offset_right = 199.20747
+offset_bottom = 86.19786
+theme_override_colors/font_color = Color(0.14901961, 0, 0.41568628, 1)
+theme_override_constants/line_spacing = -8
+theme_override_fonts/font = ExtResource("2_8pm3f")
+theme_override_font_sizes/font_size = 30
+text = "BACK TO
+MENU"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label" type="Label" parent="ColorRect" unique_id=1891544732]
+layout_mode = 0
+offset_left = 155.4169
+offset_top = 20.163994
+offset_right = 524.4031
+offset_bottom = 126.164
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_fonts/font = ExtResource("2_8pm3f")
+theme_override_font_sizes/font_size = 70
+text = "VICTORY"
+
+[connection signal="button_up" from="ColorRect/next_level_victory" to="." method="_on_next_level_victory_button_up"]
+[connection signal="button_up" from="ColorRect/back_menu_victory" to="." method="_on_back_menu_victory_button_up"]
