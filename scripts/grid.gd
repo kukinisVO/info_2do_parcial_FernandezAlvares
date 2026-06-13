@@ -81,7 +81,7 @@ func _ready():
 	spawn_pieces()
 
 func set_level():
-	level_data = levels.get([level_index])
+	level_data = levels.get(level_index)
 	set_level_data()
 	init_labels.emit(objective_type,score, moves_limit, objective_value, objective_color)
 
@@ -279,7 +279,7 @@ func destroy_matched():
 		score_changed.emit(score)
 		if score >= objective_value:
 			game_over()
-		return
+			return
 		collapse_timer.start()
 		if current_combo == 0:
 			audio_controller.sfx_swap("normal")
