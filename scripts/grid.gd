@@ -61,7 +61,7 @@ var combo = false
 enum Objetivo { SCORE, COLOR}
 
 @export var level_data: LevelConfig
-var level_index: int = 1
+var level_index: int = 2
 var score: int = 0
 var counted: int = 0
 var objective_name: String
@@ -74,6 +74,14 @@ var available_colors
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	set_level()
+	state = MOVE
+	randomize()
+	all_pieces = make_2d_array()
+	spawn_pieces()
+
+func level_up():
+	level_index = ((level_index + 1) % levels.size()) + 1
 	set_level()
 	state = MOVE
 	randomize()
