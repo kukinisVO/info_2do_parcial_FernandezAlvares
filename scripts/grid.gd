@@ -1,5 +1,6 @@
 extends Node2D
 
+#region variables
 # state machine
 enum {WAIT, MOVE}
 var state
@@ -35,6 +36,7 @@ var move_checked = false
 var first_touch = Vector2.ZERO
 var final_touch = Vector2.ZERO
 var is_controlling = false
+#endregion
 
 # === Temporizadores del ciclo destruir → colapsar → rellenar ===
 # Son nodos hijos de "grid"; el editor conecta sus señales "timeout" a este script.
@@ -86,12 +88,14 @@ func _process(delta):
 	if state == MOVE:
 		touch_input()
 	if Input.is_key_pressed(KEY_R):
-		restart_grid()
+		if not hay_jugadas_validas():
+			print("Tablero bloqueado")
+			restart_grid()
 	if Input.is_key_pressed(KEY_T):
 		imposibilizar_grid()
 		
 		
-#region M1 sistema objetivos
+#region M1. Sistema Ojetivos
 func level_up():
 	state = WAIT
 	var overlays = get_tree().get_nodes_in_group("game_overlays")
@@ -355,6 +359,17 @@ func destroy_matched():
 	var was_matched = false
 	var matched:int = 0
 	var color_matched:int = 0
+	
+	var special_pieces = []
+	for i in width:
+		for j in height:
+			var piece = all_pieces[i][j]
+			if piece != null and piece.matched and piece.is_special:
+				special_pieces.append({"piece": piece, "i": i, "j": j})
+	
+	for sp in special_pieces:
+		sp.piece.on_destroyed(self, sp.i, sp.j)
+	
 	for i in width:
 		for j in height:
 			var piece = all_pieces[i][j]
@@ -365,6 +380,7 @@ func destroy_matched():
 					color_matched +=1
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
+	
 	move_checked = true
 	if was_matched:
 		if objective_type == Objetivo.COLOR:
@@ -494,7 +510,7 @@ func hay_jugadas_validas() -> bool:
 			if j < height - 1 and all_pieces[i][j + 1] != null:
 				if would_create_match(i, j, Vector2(0, 1)):
 					return true
-	
+	print('Es un tablero sin swaps posibles')
 	return false
 
 func would_create_match(column, row, direction: Vector2) -> bool:
@@ -562,56 +578,37 @@ func check_position_for_match(x, y) -> bool:
 	return vertical_length >= 3
 
 func imposibilizar_grid():
-	# Limpiar tablero existente
+
+	# Limpiar tablero
 	for i in width:
 		for j in height:
-			if all_pieces[i][j]:
+			if all_pieces[i][j] != null:
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
-	
-	# Generar tablero fila por fila
-	for i in range(width):
-		for j in range(height):
-			# Lista de colores que no crean match
-			var colores_posibles = []
-			
-			for piece_scene in possible_pieces:
-				# Instanciar temporalmente para obtener el color
-				var temp_piece = piece_scene.instantiate()
-				var test_color = temp_piece.color
-				temp_piece.queue_free()  # ✅ Ahora queue_free() se llama en el nodo, no en el String
-				
-				# Verificar si este color es seguro
-				var es_seguro = true
-				
-				# Check horizontal
-				if i >= 2:
-					if all_pieces[i-1][j] and all_pieces[i-2][j]:
-						if all_pieces[i-1][j].color == test_color and all_pieces[i-2][j].color == test_color:
-							es_seguro = false
-				
-				# Check vertical
-				if j >= 2 and es_seguro:
-					if all_pieces[i][j-1] and all_pieces[i][j-2]:
-						if all_pieces[i][j-1].color == test_color and all_pieces[i][j-2].color == test_color:
-							es_seguro = false
-				
-				if es_seguro:
-					colores_posibles.append(piece_scene)
-			
-			# Elegir color
-			var pieza_elegida
-			if colores_posibles.size() > 0:
-				pieza_elegida = colores_posibles[randi() % colores_posibles.size()].instantiate()
-			else:
-				# Fallback: usar cualquier color
-				pieza_elegida = possible_pieces[randi() % possible_pieces.size()].instantiate()
-			
-			add_child(pieza_elegida)
-			pieza_elegida.position = grid_to_pixel(i, j)
-			all_pieces[i][j] = pieza_elegida
-	
-	print("Tablero generado sin jugadas válidas")
+
+	# Necesitas al menos 4 colores
+	if possible_pieces.size() < 4:
+		push_error("Need at least 4 piece colors")
+		return
+
+	for i in width:
+		for j in height:
+
+			var index = (i + j) % 4
+
+			var piece = possible_pieces[index].instantiate()
+
+			add_child(piece)
+			piece.position = grid_to_pixel(i, j)
+
+			all_pieces[i][j] = piece
+
+	print("Forced unsolvable board")
+
+	if not hay_jugadas_validas():
+		print("Confirmed: no valid moves")
+	else:
+		print("Pattern unexpectedly has moves")
 #endregion
 
 func _on_destroy_timer_timeout():
@@ -632,18 +629,16 @@ func game_over():
 	var overlay_to_show = victory_overlay if game_finished else defeat_overlay
 	var overlay_instance = overlay_to_show.instantiate()
 	overlay_instance.add_to_group("game_overlays")
-	# Connect to a signal from the overlay BEFORE adding it
-	# Assuming your overlay has signals like "restart_pressed" or "menu_pressed"
+	
 	if overlay_instance.has_signal("next_level"):
 		overlay_instance.next_level.connect(_on_next_level)
 	if overlay_instance.has_signal("retry_level"):
 		overlay_instance.retry_level.connect(level_up)
 	if overlay_instance.has_signal("menu_pressed"):
 		overlay_instance.menu_pressed.connect(_on_overlay_closed)
-	# Add to root
+
 	get_tree().root.add_child(overlay_instance)
-	
-	# Don't queue_free() yet! Wait for the signal
+
 func _on_next_level():
 	level_index = ((level_index + 1) % levels.size()) + 1
 	level_up()
@@ -653,7 +648,3 @@ func _on_overlay_closed():
 	# TODO (PARCIAL · M4): guarda el progreso (nivel alcanzado) y el mejor puntaje
 	# en disco (user://) para conservarlos entre sesiones.
 #endregion
-
-# TODO (PARCIAL · M2): funciones sugeridas para detectar el bloqueo del tablero.
-# func hay_jugadas_validas() -> bool:
-# func rebarajar() -> void:
