@@ -8,5 +8,6 @@ name = "Nivel 2"
 type = 1
 value = 5
 moves_limit = 30
+available_colors = Array[String](["green", "light_green", "yellow", "orange"])
 points_per_unit = 100
 metadata/_custom_type_script = "uid://blhm7y1ddy3c6"

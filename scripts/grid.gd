@@ -12,15 +12,17 @@ var state
 @export var offset: int
 @export var y_offset: int
 
-# piece array
-var possible_pieces = [
-	preload("res://scenes/blue_piece.tscn"),
-	preload("res://scenes/green_piece.tscn"),
-	preload("res://scenes/light_green_piece.tscn"),
-	preload("res://scenes/pink_piece.tscn"),
-	preload("res://scenes/yellow_piece.tscn"),
-	preload("res://scenes/orange_piece.tscn"),
-]
+# pieces
+var color_pieces = {
+	"blue": preload("res://scenes/blue_piece.tscn"),
+	"green":preload("res://scenes/green_piece.tscn"),
+	"light_green":preload("res://scenes/light_green_piece.tscn"),
+	"pink":preload("res://scenes/pink_piece.tscn"),
+	"yellow":preload("res://scenes/yellow_piece.tscn"),
+	"orange":preload("res://scenes/orange_piece.tscn"),
+}
+
+var possible_pieces = []
 # current pieces in scene
 var all_pieces = []
 
@@ -53,16 +55,24 @@ signal init_labels(type:int, base_score:int, limit:int, value:int, color:String)
 ##combo
 var current_combo = 0
 var combo = false
+
+const SAVE_FILE := "user://saves.json"
+
 @export var levels  = {
 	1 : load("res://levels/1.tres"),
 	2 : load("res://levels/2.tres"),
-	3 : load("res://levels/3.tres")
+	3 : load("res://levels/3.tres"),
+	4 : load("res://levels/4.tres"),
+	5 : load("res://levels/5.tres"),
+	6 : load("res://levels/6.tres")
 }
 enum Objetivo { SCORE, COLOR}
 
 @export var level_data: LevelConfig
-var level_index: int = 2
+var level_index: int = 1
+var highest_level: int = 1
 var score: int = 0
+var best_score: int = 0
 var counted: int = 0
 var objective_name: String
 var objective_type
@@ -74,6 +84,7 @@ var available_colors
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	load_progress()
 	set_level()
 	state = MOVE
 	randomize()
@@ -81,12 +92,19 @@ func _ready():
 	spawn_pieces()
 
 func level_up():
-	level_index = ((level_index + 1) % levels.size()) + 1
+	if level_index >= levels.size():
+		game_over()
+		return
+	level_index +=1
+	highest_level = max(highest_level, level_index)
+	reset()
+	save_progress()
 	set_level()
 	state = MOVE
 	randomize()
 	all_pieces = make_2d_array()
 	spawn_pieces()
+	
 
 func set_level():
 	level_data = levels.get(level_index)
@@ -94,6 +112,7 @@ func set_level():
 	init_labels.emit(objective_type,score, moves_limit, objective_value, objective_color)
 
 func set_level_data():
+	possible_pieces.clear()
 	objective_name = level_data.name
 	objective_type = level_data.type
 	objective_value = level_data.value
@@ -102,7 +121,9 @@ func set_level_data():
 	moves_limit = level_data.moves_limit
 	counted = moves_limit
 	available_colors = level_data.available_colors
-
+	for color in available_colors:
+		possible_pieces.append(color_pieces.get(color))
+	
 func make_2d_array():
 	var array = []
 	for i in width:
@@ -189,9 +210,9 @@ func swap_pieces(column, row, direction: Vector2):
 	# TODO (PARCIAL · M3): si alguna de las piezas intercambiadas es especial,
 	# actívala aquí (su efecto reemplaza a la búsqueda normal de combinaciones).
 	if not move_checked:
+		find_matches()
 		counted -= 1
 		counter_changed.emit(counted, moves_limit)
-		find_matches()
 
 func store_info(first_piece, other_piece, place, direction):
 	piece_one = first_piece
@@ -219,7 +240,7 @@ func touch_difference(grid_1, grid_2):
 		elif difference.y < 0:
 			swap_pieces(grid_1.x, grid_1.y, Vector2(0, -1))
 
-func _process(delta):
+func _process(_delta):
 	if state == MOVE:
 		touch_input()
 
@@ -286,7 +307,7 @@ func destroy_matched():
 			score += matched * points_per_unit
 		score_changed.emit(score)
 		if score >= objective_value:
-			game_over()
+			level_up()
 			return
 		collapse_timer.start()
 		if current_combo == 0:
@@ -343,7 +364,7 @@ func check_after_refill():
 				destroy_timer.start()
 				return
 	if score >= objective_value:
-		game_over()
+		level_up()
 		return
 	if counted <= 0:
 		game_over()
@@ -364,13 +385,46 @@ func _on_refill_timer_timeout():
 	refill_columns()
 	
 func game_over():
-	counted = moves_limit
+	print("GAMEOVER")
 	state = WAIT
 	# TODO (PARCIAL · B3): muestra la pantalla final (victoria o derrota), detén la
 	# entrada del jugador y ofrece reiniciar la partida. Emite game_finished(gano).
-	# TODO (PARCIAL · M4): guarda el progreso (nivel alcanzado) y el mejor puntaje
-	# en disco (user://) para conservarlos entre sesiones.
+	reset()
+	save_progress()
 
+func save_progress():
+	var data = {
+		"highest_level": highest_level,
+		"best_score": best_score
+	}
+	var file = FileAccess.open(SAVE_FILE, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(data))
+		file.close()
+
+func load_progress():
+	if not FileAccess.file_exists(SAVE_FILE):
+		return 
+	var file = FileAccess.open(SAVE_FILE, FileAccess.READ)
+	if file == null:
+		return 
+	var json_text = file.get_as_text()
+	file.close()
+	var json = JSON.new()
+	if json.parse(json_text) == OK:
+		var data = json.data
+		#highest_level = data.get("highest_level", 1)
+		level_index = highest_level
+		best_score = data.get("best_score", 0)
+		print(level_index)
+		print(best_score)
+
+func reset():
+	best_score = max(score, best_score)
+	score = 0
+	for piece in all_pieces:
+		piece.queue_free()
+	
 # TODO (PARCIAL · M2): funciones sugeridas para detectar el bloqueo del tablero.
 # func hay_jugadas_validas() -> bool:
 # func rebarajar() -> void:
