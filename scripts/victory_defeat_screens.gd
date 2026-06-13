@@ -11,7 +11,7 @@ signal menu_pressed
 func _ready() -> void:
 	pass
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	pass
 
 func change_scene(scene_path: String):

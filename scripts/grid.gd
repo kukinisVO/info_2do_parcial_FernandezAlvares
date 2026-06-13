@@ -103,9 +103,14 @@ func _process(_delta):
 			restart_grid()
 	if Input.is_key_pressed(KEY_T):
 		imposibilizar_grid()
-		
+
+func level_retry():
+	level_index -=1
+	level_up()
+
 func level_up():
 	state = WAIT
+	save_progress()
 	var overlays = get_tree().get_nodes_in_group("game_overlays")
 	for overlay in overlays:
 		overlay.queue_free()
@@ -117,7 +122,7 @@ func level_up():
 		return
 	level_index +=1
 	highest_level = max(highest_level, level_index)
-	save_progress()
+	
 	set_level()
 	
 		# Reset game variables
@@ -632,15 +637,16 @@ func game_over():
 	var overlay_instance = overlay_to_show.instantiate()
 	overlay_instance.add_to_group("game_overlays")
 	if overlay_instance.has_signal("next_level"):
-		overlay_instance.next_level.connect(await level_up())
+		overlay_instance.next_level.connect(level_up)
 	if overlay_instance.has_signal("retry_level"):
-		overlay_instance.retry_level.connect(level_up)
+		overlay_instance.retry_level.connect(level_retry)
 	if overlay_instance.has_signal("menu_pressed"):
 		overlay_instance.menu_pressed.connect(_on_overlay_closed)
 	get_tree().root.add_child(overlay_instance)
+	save_progress()
 	reset()
 	await get_tree().process_frame
-	save_progress()
+
 func _on_overlay_closed():
 	queue_free()
 
@@ -680,5 +686,5 @@ func reset():
 	piece_one = null
 	piece_two = null
 	current_combo = 0
-	imposibilizar_grid()
+	restart_grid()
 	
