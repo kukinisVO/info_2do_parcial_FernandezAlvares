@@ -71,6 +71,7 @@ const SAVE_FILE := "user://saves.json"
 }
 enum Objetivo { SCORE, COLOR}
 
+@onready var camera = $".".get_parent().get_node("Camera2D")
 @export var level_data: LevelConfig
 var level_index: int = 1
 var highest_level: int = 1
@@ -90,7 +91,7 @@ func _ready():
 	load_progress()
 	set_level()
 	state = MOVE
-	randomize()
+	seed(generate_daily_seed(level_index))
 	all_pieces = make_2d_array()
 	spawn_pieces()
 	
@@ -103,6 +104,16 @@ func _process(_delta):
 			restart_grid()
 	if Input.is_key_pressed(KEY_T):
 		imposibilizar_grid()
+
+func generate_daily_seed(level: int) -> int:
+	var date = Time.get_date_dict_from_system()
+	var day_seed = (
+		date.year * 10000 +
+		date.month * 100 +
+		date.day
+	)
+
+	return hash(str(day_seed) + "_" + str(level))
 
 func level_retry():
 	level_index -=1
@@ -143,7 +154,7 @@ func level_up():
 		
 	restart_grid()
 	state = MOVE
-	randomize()
+	seed(generate_daily_seed(level_index))
 	all_pieces = make_2d_array()
 	spawn_pieces()
 	
@@ -465,6 +476,7 @@ func check_after_refill():
 			if all_pieces[i][j] != null and match_at(i, j, all_pieces[i][j].color):
 				find_matches()
 				current_combo+=1
+				camera.shake(8 + current_combo * 5)
 				print("combo! :", current_combo)
 				audio_controller.sfx_match(current_combo)
 				destroy_timer.start()
