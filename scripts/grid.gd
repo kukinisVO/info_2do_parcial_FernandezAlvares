@@ -42,25 +42,58 @@ var is_controlling = false
 @onready var collapse_timer: Timer = $collapse_timer
 @onready var refill_timer: Timer = $refill_timer
 
-# === PUNTAJE (B1) y CONTADOR (B2) ===
-# Contrato sugerido para comunicarte con el HUD (top_ui.gd). No es obligatorio usar
-# señales, pero ayuda a mantener la UI desacoplada de la lógica del tablero:
-#   signal score_changed(nuevo_puntaje: int)
-#   signal counter_changed(restantes: int)        # movimientos o segundos, tú decides
-#   signal game_finished(gano: bool)
-# TODO (PARCIAL · B1/B2): declara aquí el puntaje y el contador (y sus señales, si las usas).
+#SIGNALS
+signal score_changed(nuevo_puntaje: int)
+signal counter_changed(restantes: int, total:int)
+signal init_labels(type:int, base_score:int, limit:int, value:int, color:String)  
+#signal game_finished(gano: bool)
 
 #propio calls
 @onready var audio_controller : Node2D = get_node("../AudioController")
 ##combo
 var current_combo = 0
 var combo = false
+@export var levels  = {
+	1 : load("res://levels/1.tres"),
+	2 : load("res://levels/2.tres"),
+	3 : load("res://levels/3.tres")
+}
+enum Objetivo { SCORE, COLOR}
+
+@export var level_data: LevelConfig
+var level_index: int = 1
+var score: int = 0
+var counted: int = 0
+var objective_name: String
+var objective_type
+var objective_value: int
+var objective_color: String
+var points_per_unit:int 
+var moves_limit: int 
+var available_colors
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	set_level()
 	state = MOVE
 	randomize()
 	all_pieces = make_2d_array()
 	spawn_pieces()
+
+func set_level():
+	level_data = levels.get(level_index)
+	set_level_data()
+	init_labels.emit(objective_type,score, moves_limit, objective_value, objective_color)
+
+func set_level_data():
+	objective_name = level_data.name
+	objective_type = level_data.type
+	objective_value = level_data.value
+	objective_color = level_data.color
+	points_per_unit = level_data.points_per_unit
+	moves_limit = level_data.moves_limit
+	counted = moves_limit
+	available_colors = level_data.available_colors
 
 func make_2d_array():
 	var array = []
@@ -129,6 +162,9 @@ func touch_input():
 		touch_difference(first_touch, final_touch)
 
 func swap_pieces(column, row, direction: Vector2):
+	if counted <= 0:
+		game_over()
+		return
 	var first_piece = all_pieces[column][row]
 	var other_piece = all_pieces[column + direction.x][row + direction.y]
 	if first_piece == null or other_piece == null:
@@ -144,9 +180,9 @@ func swap_pieces(column, row, direction: Vector2):
 	other_piece.move(grid_to_pixel(column, row))
 	# TODO (PARCIAL · M3): si alguna de las piezas intercambiadas es especial,
 	# actívala aquí (su efecto reemplaza a la búsqueda normal de combinaciones).
-	# TODO (PARCIAL · B2): un intercambio válido consume una jugada. Decide dónde
-	# descontar el contador: aquí, o en destroy_matched() solo si hubo combinación.
 	if not move_checked:
+		counted -= 1
+		counter_changed.emit(counted, moves_limit)
 		find_matches()
 
 func store_info(first_piece, other_piece, place, direction):
@@ -279,16 +315,28 @@ func process_match_lines(lines):
 	
 func destroy_matched():
 	var was_matched = false
+	var matched:int = 0
+	var color_matched:int = 0
 	for i in width:
 		for j in height:
 			var piece = all_pieces[i][j]
 			if piece != null and piece.matched:
 				was_matched = true
+				matched += 1
+				if objective_type == Objetivo.COLOR and all_pieces[i][j].color == objective_color:
+					color_matched +=1
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
-	
 	move_checked = true
 	if was_matched:
+		if objective_type == Objetivo.COLOR:
+			score += color_matched
+		else: 
+			score += matched * points_per_unit
+		score_changed.emit(score)
+		if score >= objective_value:
+			game_over()
+			return
 		collapse_timer.start()
 		if current_combo == 0:
 			audio_controller.sfx_swap("normal")
@@ -343,6 +391,12 @@ func check_after_refill():
 				audio_controller.sfx_match(current_combo)
 				destroy_timer.start()
 				return
+	if score >= objective_value:
+		game_over()
+		return
+	if counted <= 0:
+		game_over()
+		return
 		# El tablero quedó estable: no hay más combinaciones en cascada.
 	# TODO (PARCIAL · M1): verifica si se cumplió o falló el objetivo del nivel
 	# (puntaje meta, piezas recolectadas, etc.) y dispara victoria o derrota.
@@ -471,6 +525,7 @@ func _on_refill_timer_timeout():
 	refill_columns()
 	
 func game_over():
+	counted = moves_limit
 	state = WAIT
 	# TODO (PARCIAL · B3): muestra la pantalla final (victoria o derrota), detén la
 	# entrada del jugador y ofrece reiniciar la partida. Emite game_finished(gano).
