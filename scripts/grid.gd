@@ -46,13 +46,15 @@ var is_controlling = false
 signal score_changed(nuevo_puntaje: int)
 signal counter_changed(restantes: int, total:int)
 signal init_labels(type:int, base_score:int, limit:int, value:int, color:String)  
-#signal game_finished(gano: bool)
+var game_finished: bool = false
 
 #propio calls
 @onready var audio_controller : Node2D = get_node("../AudioController")
-##combo
+var victory_overlay = preload("res://scenes/victory_popup.tscn")
+var defeat_overlay = preload("res://scenes/defeat_popup.tscn")
 var current_combo = 0
-var combo = false
+
+## andre calls
 @export var levels  = {
 	1 : load("res://levels/1.tres"),
 	2 : load("res://levels/2.tres"),
@@ -79,14 +81,42 @@ func _ready():
 	randomize()
 	all_pieces = make_2d_array()
 	spawn_pieces()
-
+	
+func _process(delta):
+	if state == MOVE:
+		touch_input()
+	if Input.is_key_pressed(KEY_R):
+		restart_grid()
+	if Input.is_key_pressed(KEY_T):
+		imposibilizar_grid()
+		
+		
+#region M1 sistema objetivos
 func level_up():
-	level_index = ((level_index + 1) % levels.size()) + 1
+	state = WAIT
+	var overlays = get_tree().get_nodes_in_group("game_overlays")
+	for overlay in overlays:
+		overlay.queue_free()
 	set_level()
+	
+		# Reset game variables
+	score = 0
+	score_changed.emit(score)
+	current_combo = 0
+	move_checked = false
+	piece_one = null
+	piece_two = null
+	
+		# Stop any running timers
+	if destroy_timer.is_stopped() == false:
+		destroy_timer.stop()
+	if collapse_timer.is_stopped() == false:
+		collapse_timer.stop()
+	if refill_timer.is_stopped() == false:
+		refill_timer.stop()
+		
+	restart_grid()
 	state = MOVE
-	randomize()
-	all_pieces = make_2d_array()
-	spawn_pieces()
 
 func set_level():
 	level_data = levels.get(level_index)
@@ -102,7 +132,9 @@ func set_level_data():
 	moves_limit = level_data.moves_limit
 	counted = moves_limit
 	available_colors = level_data.available_colors
+#endregion
 
+#region helper functions
 func make_2d_array():
 	var array = []
 	for i in width:
@@ -155,7 +187,16 @@ func match_at(i, j, color):
 			if all_pieces[i][j - 1].color == color and all_pieces[i][j - 2].color == color:
 				return true
 	return false
+	
+func store_info(first_piece, other_piece, place, direction):
+	piece_one = first_piece
+	piece_two = other_piece
+	last_place = place
+	last_direction = direction
+	
+#endregion
 
+#region main gameplay functions + M3
 func touch_input():
 	var mouse_pos = get_global_mouse_position()
 	var grid_pos = pixel_to_grid(mouse_pos.x, mouse_pos.y)
@@ -171,6 +212,7 @@ func touch_input():
 
 func swap_pieces(column, row, direction: Vector2):
 	if counted <= 0:
+		game_finished=false
 		game_over()
 		return
 	var first_piece = all_pieces[column][row]
@@ -193,12 +235,6 @@ func swap_pieces(column, row, direction: Vector2):
 		counter_changed.emit(counted, moves_limit)
 		find_matches()
 
-func store_info(first_piece, other_piece, place, direction):
-	piece_one = first_piece
-	piece_two = other_piece
-	last_place = place
-	last_direction = direction
-
 func swap_back():
 	if piece_one != null and piece_two != null:
 		swap_pieces(last_place.x, last_place.y, last_direction)
@@ -218,12 +254,6 @@ func touch_difference(grid_1, grid_2):
 			swap_pieces(grid_1.x, grid_1.y, Vector2(0, 1))
 		elif difference.y < 0:
 			swap_pieces(grid_1.x, grid_1.y, Vector2(0, -1))
-
-func _process(delta):
-	if state == MOVE:
-		touch_input()
-	if Input.is_key_pressed(KEY_R):
-		restart_grid()
 
 func find_matches():
 	var horizontal_lines = []
@@ -343,6 +373,7 @@ func destroy_matched():
 			score += matched * points_per_unit
 		score_changed.emit(score)
 		if score >= objective_value:
+			game_finished=true	
 			game_over()
 			return
 		collapse_timer.start()
@@ -351,7 +382,9 @@ func destroy_matched():
 	else:
 		swap_back()
 		audio_controller.sfx_swap("invalid")
+#endregion
 
+#region grid_physics and refill
 func collapse_columns():
 	for i in width:
 		for j in height:
@@ -400,9 +433,11 @@ func check_after_refill():
 				destroy_timer.start()
 				return
 	if score >= objective_value:
+		game_finished=true	
 		game_over()
 		return
 	if counted <= 0:
+		game_finished=false
 		game_over()
 		return
 		# El tablero quedó estable: no hay más combinaciones en cascada.
@@ -419,6 +454,9 @@ func check_after_refill():
 	else:
 		state = MOVE
 		move_checked = false
+#endregion
+
+#region M2. Detección de bloqueo + rebarajado
 
 func restart_grid():
 	# Clear grid
@@ -440,7 +478,7 @@ func restart_grid():
 	# This starts the board match-free
 	await get_tree().process_frame 
 	find_matches() 
-	
+
 func hay_jugadas_validas() -> bool:
 	for i in width:
 		for j in height:
@@ -523,6 +561,59 @@ func check_position_for_match(x, y) -> bool:
 	
 	return vertical_length >= 3
 
+func imposibilizar_grid():
+	# Limpiar tablero existente
+	for i in width:
+		for j in height:
+			if all_pieces[i][j]:
+				all_pieces[i][j].queue_free()
+				all_pieces[i][j] = null
+	
+	# Generar tablero fila por fila
+	for i in range(width):
+		for j in range(height):
+			# Lista de colores que no crean match
+			var colores_posibles = []
+			
+			for piece_scene in possible_pieces:
+				# Instanciar temporalmente para obtener el color
+				var temp_piece = piece_scene.instantiate()
+				var test_color = temp_piece.color
+				temp_piece.queue_free()  # ✅ Ahora queue_free() se llama en el nodo, no en el String
+				
+				# Verificar si este color es seguro
+				var es_seguro = true
+				
+				# Check horizontal
+				if i >= 2:
+					if all_pieces[i-1][j] and all_pieces[i-2][j]:
+						if all_pieces[i-1][j].color == test_color and all_pieces[i-2][j].color == test_color:
+							es_seguro = false
+				
+				# Check vertical
+				if j >= 2 and es_seguro:
+					if all_pieces[i][j-1] and all_pieces[i][j-2]:
+						if all_pieces[i][j-1].color == test_color and all_pieces[i][j-2].color == test_color:
+							es_seguro = false
+				
+				if es_seguro:
+					colores_posibles.append(piece_scene)
+			
+			# Elegir color
+			var pieza_elegida
+			if colores_posibles.size() > 0:
+				pieza_elegida = colores_posibles[randi() % colores_posibles.size()].instantiate()
+			else:
+				# Fallback: usar cualquier color
+				pieza_elegida = possible_pieces[randi() % possible_pieces.size()].instantiate()
+			
+			add_child(pieza_elegida)
+			pieza_elegida.position = grid_to_pixel(i, j)
+			all_pieces[i][j] = pieza_elegida
+	
+	print("Tablero generado sin jugadas válidas")
+#endregion
+
 func _on_destroy_timer_timeout():
 	destroy_matched()
 
@@ -531,14 +622,37 @@ func _on_collapse_timer_timeout():
 
 func _on_refill_timer_timeout():
 	refill_columns()
-	
+
+#region game over functions
 func game_over():
 	counted = moves_limit
 	state = WAIT
-	# TODO (PARCIAL · B3): muestra la pantalla final (victoria o derrota), detén la
-	# entrada del jugador y ofrece reiniciar la partida. Emite game_finished(gano).
+	
+	# Choose which overlay to show
+	var overlay_to_show = victory_overlay if game_finished else defeat_overlay
+	var overlay_instance = overlay_to_show.instantiate()
+	overlay_instance.add_to_group("game_overlays")
+	# Connect to a signal from the overlay BEFORE adding it
+	# Assuming your overlay has signals like "restart_pressed" or "menu_pressed"
+	if overlay_instance.has_signal("next_level"):
+		overlay_instance.next_level.connect(_on_next_level)
+	if overlay_instance.has_signal("retry_level"):
+		overlay_instance.retry_level.connect(level_up)
+	if overlay_instance.has_signal("menu_pressed"):
+		overlay_instance.menu_pressed.connect(_on_overlay_closed)
+	# Add to root
+	get_tree().root.add_child(overlay_instance)
+	
+	# Don't queue_free() yet! Wait for the signal
+func _on_next_level():
+	level_index = ((level_index + 1) % levels.size()) + 1
+	level_up()
+	
+func _on_overlay_closed():
+	queue_free()
 	# TODO (PARCIAL · M4): guarda el progreso (nivel alcanzado) y el mejor puntaje
 	# en disco (user://) para conservarlos entre sesiones.
+#endregion
 
 # TODO (PARCIAL · M2): funciones sugeridas para detectar el bloqueo del tablero.
 # func hay_jugadas_validas() -> bool:
