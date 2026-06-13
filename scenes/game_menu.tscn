@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://chc4jjwhbt8yo"]
+
+[ext_resource type="Texture2D" uid="uid://brp4euwugc18f" path="res://assets/background.png" id="1_qdaa4"]
+[ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="2_vrsc2"]
+[ext_resource type="Script" uid="uid://d180fiew72vj5" path="res://scripts/game_menu.gd" id="2_ysvk1"]
+
+[node name="Game_Menu" type="TextureRect" unique_id=1188753867]
+offset_right = 576.0
+offset_bottom = 1024.0
+texture = ExtResource("1_qdaa4")
+script = ExtResource("2_ysvk1")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1234173215]
+modulate = Color(0.28627452, 0.043137256, 0.18431373, 0.7372549)
+layout_mode = 0
+offset_right = 574.0
+offset_bottom = 1023.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="." unique_id=1638345191]
+layout_mode = 0
+offset_left = -1.0
+offset_top = 37.0
+offset_right = 577.0
+offset_bottom = 167.0
+theme_override_fonts/font = ExtResource("2_vrsc2")
+theme_override_font_sizes/font_size = 86
+text = "MATCH-3"
+horizontal_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=947568612]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 737.0
+offset_right = 558.0
+offset_bottom = 944.0
+alignment = 1
+
+[node name="button_play" type="Button" parent="VBoxContainer" unique_id=414974853]
+modulate = Color(0.9098039, 0.88235295, 0.07450981, 1)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_fonts/font = ExtResource("2_vrsc2")
+theme_override_font_sizes/font_size = 70
+text = "play"
+
+[node name="button_selectlevel" type="Button" parent="VBoxContainer" unique_id=868924595]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_vrsc2")
+theme_override_font_sizes/font_size = 40
+text = "Level Select"
+
+[node name="button_settings" type="Button" parent="VBoxContainer" unique_id=1480830942]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_vrsc2")
+theme_override_font_sizes/font_size = 30
+text = "SETTINGS"
+
+[connection signal="button_up" from="VBoxContainer/button_play" to="." method="_on_button_play_button_up"]
+[connection signal="button_up" from="VBoxContainer/button_selectlevel" to="." method="_on_button_selectlevel_button_up"]
+[connection signal="button_up" from="VBoxContainer/button_settings" to="." method="_on_button_settings_button_up"]
