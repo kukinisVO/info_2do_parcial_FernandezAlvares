@@ -93,11 +93,13 @@ func _ready():
 
 func level_up():
 	if level_index >= levels.size():
-		game_over()
-		return
+		level_index = 0 #until we use the winning screen
+		#game_over()
+		#return
 	level_index +=1
 	highest_level = max(highest_level, level_index)
 	reset()
+	await get_tree().process_frame
 	save_progress()
 	set_level()
 	state = MOVE
@@ -163,6 +165,7 @@ func spawn_pieces():
 			piece.position = grid_to_pixel(i, j)
 			# fill array with pieces
 			all_pieces[i][j] = piece
+			piece.add_to_group("pieces")
 
 func match_at(i, j, color):
 	# check left
@@ -291,8 +294,7 @@ func destroy_matched():
 	var color_matched:int = 0
 	for i in width:
 		for j in height:
-			var piece = all_pieces[i][j]
-			if piece != null and piece.matched:
+			if all_pieces[i][j] != null and all_pieces[i][j].matched:
 				was_matched = true
 				matched += 1
 				if objective_type == Objetivo.COLOR and all_pieces[i][j].color == objective_color:
@@ -390,11 +392,13 @@ func game_over():
 	# TODO (PARCIAL · B3): muestra la pantalla final (victoria o derrota), detén la
 	# entrada del jugador y ofrece reiniciar la partida. Emite game_finished(gano).
 	reset()
+	await get_tree().process_frame
 	save_progress()
 
 func save_progress():
 	var data = {
 		"highest_level": highest_level,
+		"current_level":level_index,
 		"best_score": best_score
 	}
 	var file = FileAccess.open(SAVE_FILE, FileAccess.WRITE)
@@ -413,8 +417,9 @@ func load_progress():
 	var json = JSON.new()
 	if json.parse(json_text) == OK:
 		var data = json.data
-		#highest_level = data.get("highest_level", 1)
-		level_index = highest_level
+		highest_level = data.get("highest_level", 1)
+		var current_level = data.get("current_level", 1)
+		level_index = current_level
 		best_score = data.get("best_score", 0)
 		print(level_index)
 		print(best_score)
@@ -422,7 +427,11 @@ func load_progress():
 func reset():
 	best_score = max(score, best_score)
 	score = 0
-	for piece in all_pieces:
+	move_checked = false
+	piece_one = null
+	piece_two = null
+	current_combo = 0
+	for piece in get_tree().get_nodes_in_group("pieces"):
 		piece.queue_free()
 	
 # TODO (PARCIAL · M2): funciones sugeridas para detectar el bloqueo del tablero.
