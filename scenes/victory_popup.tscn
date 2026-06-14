@@ -30,6 +30,7 @@ rotation = -0.033161256
 color = Color(0, 0, 0, 0.5058824)
 
 [node name="next_level_victory" type="TextureButton" parent="ColorRect" unique_id=1008848881]
+visible = false
 layout_mode = 0
 offset_left = 91.674995
 offset_top = 162.12863
@@ -56,10 +57,10 @@ vertical_alignment = 1
 
 [node name="back_menu_victory" type="TextureButton" parent="ColorRect" unique_id=1392523777]
 layout_mode = 0
-offset_left = 369.88687
-offset_top = 160.35182
-offset_right = 571.8833
-offset_bottom = 247.47653
+offset_left = 243.55649
+offset_top = 164.5416
+offset_right = 445.55292
+offset_bottom = 251.6663
 texture_normal = ExtResource("1_fioid")
 ignore_texture_size = true
 stretch_mode = 0
@@ -68,7 +69,7 @@ stretch_mode = 0
 layout_mode = 0
 offset_left = 5.930386
 offset_top = 2.1978645
-offset_right = 199.20747
+offset_right = 194.88269
 offset_bottom = 86.19786
 theme_override_colors/font_color = Color(0.14901961, 0, 0.41568628, 1)
 theme_override_constants/line_spacing = -8
