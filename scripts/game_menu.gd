@@ -13,6 +13,4 @@ func _on_button_selectlevel_button_up() -> void:
 	print("bip")
 
 func bootGameScene():
-	var new_scene = load(game_scene_path).instantiate()
-	get_tree().root.add_child(new_scene)
-	queue_free()
+	Transition.change_scene_to(game_scene_path)

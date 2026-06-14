@@ -4,6 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://bt33j5dwxano3" path="res://scenes/top_ui.tscn" id="2_wrbvl"]
 [ext_resource type="Texture2D" uid="uid://cdunkljd6up72" path="res://assets/bottom_ui.png" id="3_jy0d4"]
 [ext_resource type="Script" uid="uid://biuagxx08tqcb" path="res://scripts/grid.gd" id="4_4jr62"]
+[ext_resource type="Script" uid="uid://6bswbwu8ldo6" path="res://scripts/bottom_ui.gd" id="4_u5sy4"]
+[ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="5_gee14"]
 [ext_resource type="PackedScene" uid="uid://tj73f3von03j" path="res://scenes/audio_controller.tscn" id="5_iywne"]
 [ext_resource type="Script" uid="uid://6xobmbneyri8" path="res://scenes/camera_2d.gd" id="6_p57ef"]
 
@@ -21,6 +23,19 @@ offset_top = 928.0
 offset_right = 576.0
 offset_bottom = 1020.0
 texture = ExtResource("3_jy0d4")
+script = ExtResource("4_u5sy4")
+
+[node name="Label" type="Label" parent="bottom_ui" unique_id=781303084]
+layout_mode = 0
+offset_left = 5.0
+offset_right = 572.0
+offset_bottom = 78.0
+theme_override_constants/line_spacing = -9
+theme_override_fonts/font = ExtResource("5_gee14")
+theme_override_font_sizes/font_size = 44
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="grid" type="Node2D" parent="." unique_id=379274858]
 script = ExtResource("4_4jr62")

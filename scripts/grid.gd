@@ -49,7 +49,7 @@ var is_controlling = false
 #SIGNALS
 signal score_changed(nuevo_puntaje: int)
 signal counter_changed(restantes: int, total:int)
-signal init_labels(type:int, base_score:int, limit:int, value:int, color:String)  
+signal init_labels(type:int, base_score:int, limit:int, value:int, color:String, nivel:int)  
 var game_finished: bool = false
 
 #propio calls
@@ -125,13 +125,8 @@ func level_retry():
 func level_up():
 	
 	state = WAIT
+	
 	save_progress()
-	var overlays = get_tree().get_nodes_in_group("game_overlays")
-	for overlay in overlays:
-		overlay.queue_free()
-		
-	reset()
-	await get_tree().process_frame
 	if level_index >= levels.size():
 		game_finished = true
 		game_over()
@@ -141,26 +136,24 @@ func level_up():
 	highest_level = max(highest_level, level_index)
 	
 	set_level()
-	
-		# Stop any running timers
+	# Stop any running timers
 	if destroy_timer.is_stopped() == false:
 		destroy_timer.stop()
 	if collapse_timer.is_stopped() == false:
 		collapse_timer.stop()
 	if refill_timer.is_stopped() == false:
 		refill_timer.stop()
-		
-
-	state = MOVE
 	seed(generate_daily_seed(level_index))
-	restart_grid()
+	Transition.fade_on_finish_func(reset)  #restart grid and level values
 	
+	state = MOVE
 
 func set_level():
 	level_data = levels.get(level_index)
 	set_level_data()
-	init_labels.emit(objective_type,score, moves_limit, objective_value, objective_color)
-
+	init_labels.emit(objective_type,score, moves_limit, objective_value, objective_color,level_index)
+	
+	
 func set_level_data():
 	possible_pieces.clear()
 	objective_name = level_data.name
@@ -684,7 +677,7 @@ func load_progress():
 		print(level_index)
 		print(best_score)
 
-func reset():
+func reset() :
 	best_score = max(score, best_score)
 	score = 0
 	move_checked = false

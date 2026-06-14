@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://vqxrsu04n5bs"]
+
+[ext_resource type="Script" uid="uid://b35j1u7opit4a" path="res://scripts/transition.gd" id="1_rerct"]
+
+[node name="Transition" type="CanvasLayer" unique_id=244178491]
+process_mode = 3
+script = ExtResource("1_rerct")
+
+[node name="BlackScreen" type="ColorRect" parent="." unique_id=1615037470]
+modulate = Color(1, 1, 1, 0)
+offset_right = 576.0
+offset_bottom = 1024.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
