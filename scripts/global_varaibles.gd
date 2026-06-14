@@ -6,6 +6,8 @@ var current_level: int = 0
 var best_score: int = 0
 var highest_level: int = 0
 
+var counted: int
+
 func _ready():
 	load_save()
 

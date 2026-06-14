@@ -53,7 +53,6 @@ signal init_labels(type:int, base_score:int, limit:int, value:int, color:String,
 var game_finished: bool = false
 
 #propio calls
-@onready var audio_controller : Node2D = get_node("../AudioController")
 var victory_overlay = preload("res://scenes/victory_popup.tscn")
 var defeat_overlay = preload("res://scenes/defeat_popup.tscn")
 var current_combo = 0
@@ -259,7 +258,7 @@ func swap_pieces(column, row, direction: Vector2):
 	#other_piece.position = grid_to_pixel(column, row)
 	first_piece.move(grid_to_pixel(column + direction.x, row + direction.y))
 	other_piece.move(grid_to_pixel(column, row))
-	audio_controller.sfx_swap("invalid")
+	AudioController.sfx_swap("invalid")
 	# TODO (PARCIAL · M3): si alguna de las piezas intercambiadas es especial,
 	# actívala aquí (su efecto reemplaza a la búsqueda normal de combinaciones).
 	if not move_checked:
@@ -367,14 +366,14 @@ func process_match_lines(lines):
 						if all_pieces[x][row] != null:
 							all_pieces[x][row].matched = true
 							all_pieces[x][row].dim()
-					audio_controller.sfx_match(4)
+					AudioController.sfx_match(4)
 				else:
 					var column = pieces[0].x
 					for y in range(height):
 						if all_pieces[column][y] != null:
 							all_pieces[column][y].matched = true
 							all_pieces[column][y].dim()
-					audio_controller.sfx_match(4)
+					AudioController.sfx_match(4)
 			
 			5:
 				for x in range(width):
@@ -382,7 +381,7 @@ func process_match_lines(lines):
 						if all_pieces[x][y] != null and _colors_match(all_pieces[x][y].color, color):
 							all_pieces[x][y].matched = true
 							all_pieces[x][y].dim()
-				audio_controller.sfx_match(5)
+				AudioController.sfx_match(5)
 	
 func destroy_matched():
 	var was_matched = false
@@ -415,7 +414,7 @@ func destroy_matched():
 	move_checked = true
 	if was_matched:
 		if current_combo == 0:
-			audio_controller.sfx_swap("normal")
+			AudioController.sfx_swap("normal")
 		if objective_type == Objetivo.COLOR:
 			score += color_matched
 		else: 
@@ -424,6 +423,7 @@ func destroy_matched():
 		if score >= objective_value:
 			level_up()
 			return
+		counter_changed.emit(GlobalVariable.counted, moves_limit)
 		collapse_timer.start()
 	else:
 		swap_back()
@@ -473,7 +473,7 @@ func check_after_refill():
 				current_combo+=1
 				camera.shake(8 + current_combo * 5)
 				print("combo! :", current_combo)
-				audio_controller.sfx_match(current_combo)
+				AudioController.sfx_match(current_combo)
 				destroy_timer.start()
 				return
 	if score >= objective_value:
@@ -483,6 +483,7 @@ func check_after_refill():
 		game_finished=false
 		game_over()
 		return
+
 	current_combo=0
 	
 	if not hay_jugadas_validas():

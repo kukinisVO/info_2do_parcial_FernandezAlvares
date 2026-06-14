@@ -1,6 +1,6 @@
 extends Node2D
 
-@export var mute: bool = false
+var mute: bool = false
 
 func sfx_soundtrack():
 	if not mute:
@@ -10,11 +10,11 @@ func sfx_swap(type: String) -> void:
 	if not mute:
 		match type:
 			"normal":
-				$"piece_swap".play()
+				$piece_swap.play()
 			"invalid":
-				$"piece_!swap".play()
+				$piece_invalid_swap.play()
 			"powered":
-				$"piece_swap+".play()
+				$piece_swap_plos.play()
 			_:
 				print("Wrong or unkown swap type sound")
 
@@ -29,3 +29,8 @@ func sfx_match(type: int) -> void:
 				$"piece_match3".play()
 			_:
 				$"piece_match3".play()
+
+func sfx_special(type: String) ->void:
+		match type:
+			"glitched":
+				$piece_special_glitched.play()

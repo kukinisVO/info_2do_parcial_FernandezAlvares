@@ -23,6 +23,7 @@ config/icon="res://icon.svg"
 
 Transition="*uid://vqxrsu04n5bs"
 GlobalVariable="*uid://1ta8mxu1rd3m"
+AudioController="*uid://tj73f3von03j"
 
 [display]
 

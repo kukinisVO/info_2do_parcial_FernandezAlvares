@@ -6,7 +6,6 @@
 [ext_resource type="Script" uid="uid://biuagxx08tqcb" path="res://scripts/grid.gd" id="4_4jr62"]
 [ext_resource type="Script" uid="uid://6bswbwu8ldo6" path="res://scripts/bottom_ui.gd" id="4_u5sy4"]
 [ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="5_gee14"]
-[ext_resource type="PackedScene" uid="uid://tj73f3von03j" path="res://scenes/audio_controller.tscn" id="5_iywne"]
 [ext_resource type="Script" uid="uid://6xobmbneyri8" path="res://scenes/camera_2d.gd" id="6_p57ef"]
 [ext_resource type="Shader" uid="uid://fa0xwhwujdn7" path="res://assets/game_menu.gdshader" id="9_0tnpc"]
 
@@ -21,12 +20,12 @@ shader_parameter/pixelate = false
 shader_parameter/roll = true
 shader_parameter/roll_speed = 5.0
 shader_parameter/roll_size = 20.882000991895
-shader_parameter/roll_variation = 1.8960000868001199
+shader_parameter/roll_variation = 1.89600008680012
 shader_parameter/distort_intensity = 0.0030000001425
 shader_parameter/noise_opacity = 0.106000005035
 shader_parameter/noise_speed = 8.0
 shader_parameter/static_noise_intensity = 0.06
-shader_parameter/aberration = -0.019999953450000052
+shader_parameter/aberration = -0.01999995345000005
 shader_parameter/brightness = 1.4
 shader_parameter/discolor = false
 shader_parameter/warp_amount = 0.0690000032775
@@ -94,8 +93,6 @@ one_shot = true
 [node name="refill_timer" type="Timer" parent="grid" unique_id=1089072306]
 wait_time = 0.5
 one_shot = true
-
-[node name="AudioController" parent="." unique_id=1147757710 instance=ExtResource("5_iywne")]
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2089718351]
 position = Vector2(289, 513)

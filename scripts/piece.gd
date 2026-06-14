@@ -5,7 +5,6 @@ extends Node2D
 @export var texture_column : Texture2D
 @export var texture_adjacent : Texture2D
 @export var special_spawn_chance = 0.1 
-
 @onready var rainbow_effect: Sprite2D = $Overlay
 
 enum PieceType {
@@ -13,7 +12,8 @@ enum PieceType {
 	HORIZONTAL,
 	VERTICAL,
 	ADJACENT,
-	RAINBOW
+	RAINBOW,
+	GLITCHED
 }
 
 var matched = false
@@ -26,7 +26,7 @@ func _ready():
 
 func make_special():
 	is_special = true
-	var types = [PieceType.HORIZONTAL, PieceType.VERTICAL, PieceType.ADJACENT, PieceType.RAINBOW]
+	var types = [PieceType.HORIZONTAL, PieceType.VERTICAL, PieceType.ADJACENT, PieceType.RAINBOW, PieceType.GLITCHED]
 	piece_type = types[randi() % types.size()]
 	
 	match piece_type:
@@ -38,6 +38,11 @@ func make_special():
 			$Sprite2D.texture = texture_adjacent
 		PieceType.RAINBOW:
 			blink_rainbow_texture()
+		PieceType.GLITCHED:
+			var shader = load("res://assets/glitched.gdshader")
+			var shader_material = ShaderMaterial.new()
+			shader_material.shader = shader
+			$Sprite2D.material = shader_material
 			
 func move(target):
 	var move_tween = create_tween()
@@ -47,6 +52,7 @@ func move(target):
 
 func dim():
 	$Sprite2D.modulate = Color(1, 1, 1, 0.5)
+	$Overlay.modulate = Color(1, 1, 1, 0.5)
 	
 func on_destroyed(grid, x, y):
 	if not is_special:
@@ -91,6 +97,12 @@ func on_destroyed(grid, x, y):
 					if piece and piece != self:
 						piece.matched = true
 						piece.dim()
+			return true
+			
+		PieceType.GLITCHED:
+			if GlobalVariable.counted > 1:
+				GlobalVariable.counted -= 1
+				AudioController.sfx_special("glitched")
 			return true
 	
 	return false
