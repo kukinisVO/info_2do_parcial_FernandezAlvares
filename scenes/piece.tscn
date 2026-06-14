@@ -1,9 +1,14 @@
 [gd_scene format=3 uid="uid://dimhfx4c1igfv"]
 
 [ext_resource type="Script" uid="uid://bgko3xthbsvt6" path="res://scripts/piece.gd" id="1_vm0sw"]
+[ext_resource type="Texture2D" uid="uid://d1ucglmj14llv" path="res://assets/pieces/Rainbow.png" id="2_s58gp"]
 
 [node name="Piece" type="Node2D" unique_id=701536515]
 scale = Vector2(0.5, 0.5)
 script = ExtResource("1_vm0sw")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=53242104]
+
+[node name="Overlay" type="Sprite2D" parent="." unique_id=947678638]
+visible = false
+texture = ExtResource("2_s58gp")
