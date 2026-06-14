@@ -3,6 +3,7 @@ extends TextureRect
 @onready var score_label : Label = $MarginContainer/HBoxContainer/score_label
 @onready var counter_label : Label = $MarginContainer/HBoxContainer/counter_label
 @onready var type_label  : Label = $MarginContainer/HBoxContainer/type_label
+@export var game_menu_path = "res://scenes/game_menu.tscn"
 
 var current_score = 0
 var current_count = 0
@@ -45,3 +46,8 @@ func update_counter(restantes: int, _total:int) -> void:
 		tween.tween_property(counter_label, "modulate", original_color, 0.3)
 
 	counter_label.text = str(GlobalVariable.counted)
+
+
+func _on_texture_button_pressed() -> void:
+	Transition.change_scene_to(game_menu_path)
+	queue_free()

@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://biuagxx08tqcb" path="res://scripts/grid.gd" id="4_4jr62"]
 [ext_resource type="Script" uid="uid://6bswbwu8ldo6" path="res://scripts/bottom_ui.gd" id="4_u5sy4"]
 [ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="5_gee14"]
+[ext_resource type="Shader" uid="uid://1xb2basud08e" path="res://assets/glitched.gdshader" id="6_0tnpc"]
 [ext_resource type="Script" uid="uid://6xobmbneyri8" path="res://scenes/camera_2d.gd" id="6_p57ef"]
 [ext_resource type="Shader" uid="uid://fa0xwhwujdn7" path="res://assets/game_menu.gdshader" id="9_0tnpc"]
 
@@ -33,6 +34,34 @@ shader_parameter/clip_warp = false
 shader_parameter/vignette_intensity = 0.4
 shader_parameter/vignette_opacity = 0.43200002052
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0tnpc"]
+shader = ExtResource("6_0tnpc")
+shader_parameter/glitch_chance = 0.1
+shader_parameter/glitch_speed = 7.0
+shader_parameter/slice_density = 14.0
+shader_parameter/slice_strength = 0.38
+shader_parameter/shake_strength = 0.02
+shader_parameter/chroma_offset = 0.016
+shader_parameter/noise_strength = 0.2
+shader_parameter/color_flash_strength = 0.4
+shader_parameter/scanline_strength = 0.18
+shader_parameter/local_warp_strength = 0.14
+shader_parameter/flip_chance = 0.15
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dinhu"]
+shader = ExtResource("6_0tnpc")
+shader_parameter/glitch_chance = 0.0800000038
+shader_parameter/glitch_speed = 7.0
+shader_parameter/slice_density = 14.0
+shader_parameter/slice_strength = 0.38
+shader_parameter/shake_strength = 0.02
+shader_parameter/chroma_offset = 0.016
+shader_parameter/noise_strength = 0.2
+shader_parameter/color_flash_strength = 0.4
+shader_parameter/scanline_strength = 0.18
+shader_parameter/local_warp_strength = 0.14
+shader_parameter/flip_chance = 0.0
+
 [node name="Game" type="Node2D" unique_id=886759947]
 
 [node name="background" type="TextureRect" parent="." unique_id=704833246]
@@ -52,18 +81,19 @@ theme_override_fonts/font = ExtResource("5_gee14")
 theme_override_font_sizes/font_size = 30
 text = "Moves:"
 
-[node name="bottom_ui" type="TextureRect" parent="." unique_id=75448770]
+[node name="bottom_ui2" type="TextureRect" parent="." unique_id=1360349662]
 offset_top = 928.0
 offset_right = 576.0
 offset_bottom = 1020.0
 texture = ExtResource("3_jy0d4")
 script = ExtResource("4_u5sy4")
 
-[node name="Label" type="Label" parent="bottom_ui" unique_id=781303084]
+[node name="Label" type="Label" parent="bottom_ui2" unique_id=1572829449]
 layout_mode = 0
-offset_left = 5.0
-offset_right = 572.0
-offset_bottom = 78.0
+offset_left = 3.0
+offset_top = 8.0
+offset_right = 570.0
+offset_bottom = 86.0
 theme_override_constants/line_spacing = -9
 theme_override_fonts/font = ExtResource("5_gee14")
 theme_override_font_sizes/font_size = 44
@@ -109,8 +139,34 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="TextureButton" type="TextureButton" parent="." unique_id=1858489734]
+material = SubResource("ShaderMaterial_0tnpc")
+offset_left = 17.0
+offset_top = 136.0
+offset_right = 183.0
+offset_bottom = 235.0
+texture_normal = ExtResource("3_jy0d4")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="Label" type="Label" parent="TextureButton" unique_id=781303084]
+material = SubResource("ShaderMaterial_dinhu")
+layout_mode = 0
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 170.0
+offset_bottom = 89.0
+theme_override_constants/line_spacing = -9
+theme_override_fonts/font = ExtResource("5_gee14")
+theme_override_font_sizes/font_size = 30
+text = "BACK TO 
+MENU"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [connection signal="timeout" from="grid/destroy_timer" to="grid" method="_on_destroy_timer_timeout"]
 [connection signal="timeout" from="grid/collapse_timer" to="grid" method="_on_collapse_timer_timeout"]
 [connection signal="timeout" from="grid/refill_timer" to="grid" method="_on_refill_timer_timeout"]
+[connection signal="pressed" from="TextureButton" to="top_ui" method="_on_texture_button_pressed"]
 
 [editable path="top_ui"]
