@@ -8,6 +8,31 @@
 [ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="5_gee14"]
 [ext_resource type="PackedScene" uid="uid://tj73f3von03j" path="res://scenes/audio_controller.tscn" id="5_iywne"]
 [ext_resource type="Script" uid="uid://6xobmbneyri8" path="res://scenes/camera_2d.gd" id="6_p57ef"]
+[ext_resource type="Shader" uid="uid://fa0xwhwujdn7" path="res://assets/game_menu.gdshader" id="9_0tnpc"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vtaks"]
+shader = ExtResource("9_0tnpc")
+shader_parameter/overlay = true
+shader_parameter/scanlines_opacity = 0.02000000095
+shader_parameter/scanlines_width = 0.0830000039425
+shader_parameter/grille_opacity = 0.0
+shader_parameter/resolution = Vector2(640, 480)
+shader_parameter/pixelate = false
+shader_parameter/roll = true
+shader_parameter/roll_speed = 5.0
+shader_parameter/roll_size = 20.882000991895
+shader_parameter/roll_variation = 1.8960000868001199
+shader_parameter/distort_intensity = 0.0030000001425
+shader_parameter/noise_opacity = 0.106000005035
+shader_parameter/noise_speed = 8.0
+shader_parameter/static_noise_intensity = 0.06
+shader_parameter/aberration = -0.019999953450000052
+shader_parameter/brightness = 1.4
+shader_parameter/discolor = false
+shader_parameter/warp_amount = 0.0690000032775
+shader_parameter/clip_warp = false
+shader_parameter/vignette_intensity = 0.4
+shader_parameter/vignette_opacity = 0.43200002052
 
 [node name="Game" type="Node2D" unique_id=886759947]
 
@@ -75,6 +100,17 @@ one_shot = true
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2089718351]
 position = Vector2(289, 513)
 script = ExtResource("6_p57ef")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=344539474]
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer" unique_id=2044370459]
+material = SubResource("ShaderMaterial_vtaks")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [connection signal="timeout" from="grid/destroy_timer" to="grid" method="_on_destroy_timer_timeout"]
 [connection signal="timeout" from="grid/collapse_timer" to="grid" method="_on_collapse_timer_timeout"]
