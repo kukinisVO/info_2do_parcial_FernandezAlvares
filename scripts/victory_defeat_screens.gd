@@ -16,15 +16,20 @@ func _process(_delta: float) -> void:
 	
 func _on_next_level_victory_button_up() -> void:
 	next_level.emit()
+	queue_free()
 	print('siguiente')
+	
 func _on_back_menu_victory_button_up() -> void:
 	menu_pressed.emit()
 	Transition.change_scene_to(game_menu_path)
-
+	queue_free()
+		
 func _on_back_menu_defeat_button_up() -> void:
 	menu_pressed.emit()
 	Transition.change_scene_to(game_menu_path)
+	queue_free()
 	
 func _on_retry_level_defeat_pressed() -> void:
 	retry_level.emit()
-	print('repito')
+	queue_free()
+	

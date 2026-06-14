@@ -92,6 +92,9 @@ func _colors_match(color1, color2) -> bool:
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	load_progress()
+	if GlobalVariable.level_selected:
+		level_index = GlobalVariable.current_level
+		GlobalVariable.level_selected = false
 	set_level()
 	state = MOVE
 	seed(generate_daily_seed(level_index))
@@ -638,19 +641,15 @@ func game_over():
 		overlay_instance.next_level.connect(level_up)
 	if overlay_instance.has_signal("retry_level"):
 		overlay_instance.retry_level.connect(level_retry)
-	if overlay_instance.has_signal("menu_pressed"):
-		overlay_instance.menu_pressed.connect(_on_overlay_closed)
+		
 	get_tree().root.add_child(overlay_instance)
 	save_progress()
 	reset()
 	await get_tree().process_frame
 
-func _on_overlay_closed():
-	queue_free()
-
 func save_progress():
 	var data = {
-		"highest_level": highest_level,
+		"highest_level": level_index,
 		"current_level":level_index,
 		"best_score": best_score
 	}
@@ -660,22 +659,9 @@ func save_progress():
 		file.close()
 
 func load_progress():
-	if not FileAccess.file_exists(SAVE_FILE):
-		return 
-	var file = FileAccess.open(SAVE_FILE, FileAccess.READ)
-	if file == null:
-		return 
-	var json_text = file.get_as_text()
-	file.close()
-	var json = JSON.new()
-	if json.parse(json_text) == OK:
-		var data = json.data
-		highest_level = data.get("highest_level", 1)
-		var current_level = data.get("current_level", 1)
-		level_index = current_level
-		best_score = data.get("best_score", 0)
-		print(level_index)
-		print(best_score)
+	level_index = GlobalVariable.current_level
+	highest_level = GlobalVariable.highest_level
+	best_score = GlobalVariable.best_score
 
 func reset() :
 	best_score = max(score, best_score)
