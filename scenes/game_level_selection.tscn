@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://d2725j0b7vonv"]
+
+[ext_resource type="Texture2D" uid="uid://brp4euwugc18f" path="res://assets/background.png" id="1_8h60b"]
+[ext_resource type="Script" uid="uid://d180fiew72vj5" path="res://scripts/game_menu.gd" id="2_0qkbs"]
+[ext_resource type="FontFile" uid="uid://b25431rxog83j" path="res://assets/fonts/Kenney Blocks.ttf" id="3_3dxrs"]
+[ext_resource type="Script" uid="uid://b1730pa0iqshq" path="res://scripts/level_selector_container.gd" id="4_ag5wp"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_ysvk1"]
+size = Vector2(576, 1024)
+
+[node name="Game_Menu" type="TextureRect" unique_id=1188753867]
+offset_right = 576.0
+offset_bottom = 1024.0
+texture = ExtResource("1_8h60b")
+script = ExtResource("2_0qkbs")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1234173215]
+modulate = Color(0.28627452, 0.043137256, 0.18431373, 0.7372549)
+layout_mode = 0
+offset_right = 574.0
+offset_bottom = 1023.0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="." unique_id=1638345191]
+layout_mode = 0
+offset_left = -1.0
+offset_top = 37.0
+offset_right = 577.0
+offset_bottom = 167.0
+theme_override_fonts/font = ExtResource("3_3dxrs")
+theme_override_font_sizes/font_size = 86
+text = "MATCH-3"
+horizontal_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=947568612]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 205.0
+offset_right = 554.0
+offset_bottom = 275.0
+alignment = 1
+
+[node name="button_backtomenu" type="Button" parent="VBoxContainer" unique_id=868924595]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_3dxrs")
+theme_override_font_sizes/font_size = 40
+text = "BACK TO MENU"
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1600110337]
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="CanvasLayer" unique_id=1532085451]
+position = Vector2(-445, 499)
+mesh = SubResource("QuadMesh_ysvk1")
+
+[node name="GridContainer" type="GridContainer" parent="." unique_id=730903686]
+layout_mode = 0
+offset_left = 88.0
+offset_top = 315.0
+offset_right = 487.0
+offset_bottom = 584.0
+columns = 3
+script = ExtResource("4_ag5wp")
+
+[connection signal="button_up" from="VBoxContainer/button_backtomenu" to="." method="_on_button_backtomenu_button_up"]

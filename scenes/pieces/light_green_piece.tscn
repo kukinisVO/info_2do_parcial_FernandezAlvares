@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b83v444nmsr7j"]
 
-[ext_resource type="PackedScene" uid="uid://dimhfx4c1igfv" path="res://scenes/piece.tscn" id="1_54wfa"]
+[ext_resource type="PackedScene" uid="uid://dimhfx4c1igfv" path="res://scenes/pieces/piece.tscn" id="1_54wfa"]
 [ext_resource type="Texture2D" uid="uid://bb0xx0yg2qgom" path="res://assets/pieces/Light Green Row.png" id="2_u3esn"]
 [ext_resource type="Texture2D" uid="uid://dkjxr73f4g1t8" path="res://assets/pieces/Light Green Piece.png" id="2_xtsdc"]
 [ext_resource type="Texture2D" uid="uid://ce47mf6vf03ew" path="res://assets/pieces/Light Green Column.png" id="3_dk5gp"]

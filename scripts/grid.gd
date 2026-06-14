@@ -15,12 +15,12 @@ var state
 
 # pieces
 var color_pieces = {
-	"blue": preload("res://scenes/blue_piece.tscn"),
-	"green":preload("res://scenes/green_piece.tscn"),
-	"light_green":preload("res://scenes/light_green_piece.tscn"),
-	"pink":preload("res://scenes/pink_piece.tscn"),
-	"yellow":preload("res://scenes/yellow_piece.tscn"),
-	"orange":preload("res://scenes/orange_piece.tscn"),
+	"blue": preload("res://scenes/pieces/blue_piece.tscn"),
+	"green":preload("res://scenes/pieces/green_piece.tscn"),
+	"light_green":preload("res://scenes/pieces/light_green_piece.tscn"),
+	"pink":preload("res://scenes/pieces/pink_piece.tscn"),
+	"yellow":preload("res://scenes/pieces/yellow_piece.tscn"),
+	"orange":preload("res://scenes/pieces/orange_piece.tscn"),
 }
 
 var possible_pieces = []
