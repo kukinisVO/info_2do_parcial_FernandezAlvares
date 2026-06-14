@@ -4,32 +4,29 @@ extends Node2D
 @export var texture_row : Texture2D
 @export var texture_column : Texture2D
 @export var texture_adjacent : Texture2D
-
 @export var special_spawn_chance = 0.1 
+
+@onready var rainbow_effect: Sprite2D = $Overlay
 
 enum PieceType {
 	NORMAL,
 	HORIZONTAL,
 	VERTICAL,
-	ADJACENT
+	ADJACENT,
+	RAINBOW
 }
 
 var matched = false
 var piece_type = PieceType.NORMAL
 var is_special = false
 
-# TODO (PARCIAL · M3): para las piezas especiales podrías guardar aquí su tipo
-# (por ejemplo, "fila", "columna" o "bomba") y exponer un método que dispare su
-# efecto sobre el tablero cuando se active.
 func _ready():
-	# Randomly determine if this piece is special
 	if randf() < special_spawn_chance:
 		make_special()
-		
 
 func make_special():
 	is_special = true
-	var types = [PieceType.HORIZONTAL, PieceType.VERTICAL, PieceType.ADJACENT]
+	var types = [PieceType.HORIZONTAL, PieceType.VERTICAL, PieceType.ADJACENT, PieceType.RAINBOW]
 	piece_type = types[randi() % types.size()]
 	
 	match piece_type:
@@ -38,7 +35,9 @@ func make_special():
 		PieceType.VERTICAL:
 			$Sprite2D.texture = texture_column
 		PieceType.ADJACENT:
-			$Sprite2D.texture = texture_adjacent  
+			$Sprite2D.texture = texture_adjacent
+		PieceType.RAINBOW:
+			blink_rainbow_texture()
 			
 func move(target):
 	var move_tween = create_tween()
@@ -51,34 +50,59 @@ func dim():
 	
 func on_destroyed(grid, x, y):
 	if not is_special:
-		return false  # Normal piece, no special effect
+		return false
 	
 	match piece_type:
 		PieceType.HORIZONTAL:
-			# Destroy entire row
+			# Destruye toda la fila (mismo color)
 			for i in range(grid.width):
-				if grid.all_pieces[i][y] and grid.all_pieces[i][y] != self and grid.all_pieces[i][y].color == self.color:
-					grid.all_pieces[i][y].matched = true
+				var piece = grid.all_pieces[i][y]
+				if piece and piece != self and piece.color == color:
+					piece.matched = true
+					piece.dim()
 			return true
 			
 		PieceType.VERTICAL:
-			# Destroy entire column
+			# Destruye toda la columna (mismo color)
 			for j in range(grid.height):
-				if grid.all_pieces[x][j] and grid.all_pieces[x][j] != self and grid.all_pieces[x][j].color == self.color:
-					grid.all_pieces[x][j].matched = true
+				var piece = grid.all_pieces[x][j]
+				if piece and piece != self and piece.color == color:
+					piece.matched = true
+					piece.dim()
 			return true
 			
 		PieceType.ADJACENT:
-			var radius = 2  # 3x3 area (radius 1 = 1 cell in each direction)
+			# Destruye mismo color en área de 5x5
+			var radius = 2
 			for i in range(max(0, x - radius), min(grid.width, x + radius + 1)):
 				for j in range(max(0, y - radius), min(grid.height, y + radius + 1)):
-					if grid.all_pieces[i][j] and grid.all_pieces[i][j] != self:
-						if grid.all_pieces[i][j].color == self.color:
-							grid.all_pieces[i][j].matched = true
+					var piece = grid.all_pieces[i][j]
+					if piece and piece != self and piece.color == color:
+						piece.matched = true
+						piece.dim()
+			return true
+		
+		PieceType.RAINBOW:
+			# Destruye all en radio
+			var radius = 1
+			for i in range(max(0, x - radius), min(grid.width, x + radius + 1)):
+				for j in range(max(0, y - radius), min(grid.height, y + radius + 1)):
+					var piece = grid.all_pieces[i][j]
+					if piece and piece != self:
+						piece.matched = true
+						piece.dim()
 			return true
 	
 	return false
 
-# Check if this piece can participate in a match
 func can_match():
-	return true  # All pieces can match, but specials have extra effects
+	return true
+
+func blink_rainbow_texture():
+	
+	var tween = create_tween()
+	tween.set_loops() # infinite loop
+	rainbow_effect.show()
+
+	tween.tween_property(rainbow_effect, "modulate:a", 0.0, 2.0) # fade out
+	tween.tween_property(rainbow_effect, "modulate:a", 1.0, 1.0) # fade in

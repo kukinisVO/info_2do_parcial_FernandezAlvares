@@ -86,6 +86,9 @@ var points_per_unit:int
 var moves_limit: int 
 var available_colors
 
+func _colors_match(color1, color2) -> bool:
+	return color1 == color2
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	load_progress()
@@ -120,29 +123,24 @@ func level_retry():
 	level_up()
 
 func level_up():
+	
 	state = WAIT
 	save_progress()
 	var overlays = get_tree().get_nodes_in_group("game_overlays")
 	for overlay in overlays:
 		overlay.queue_free()
+		
 	reset()
 	await get_tree().process_frame
 	if level_index >= levels.size():
 		game_finished = true
 		game_over()
 		return
+		
 	level_index +=1
 	highest_level = max(highest_level, level_index)
 	
 	set_level()
-	
-		# Reset game variables
-	score = 0
-	score_changed.emit(score)
-	current_combo = 0
-	move_checked = false
-	piece_one = null
-	piece_two = null
 	
 		# Stop any running timers
 	if destroy_timer.is_stopped() == false:
@@ -152,11 +150,10 @@ func level_up():
 	if refill_timer.is_stopped() == false:
 		refill_timer.stop()
 		
-	restart_grid()
+
 	state = MOVE
 	seed(generate_daily_seed(level_index))
-	all_pieces = make_2d_array()
-	spawn_pieces()
+	restart_grid()
 	
 
 func set_level():
@@ -201,32 +198,31 @@ func in_grid(column, row):
 func spawn_pieces():
 	for i in width:
 		for j in height:
-			# random number
 			var rand = randi_range(0, possible_pieces.size() - 1)
-			# instance 
 			var piece = possible_pieces[rand].instantiate()
-			# repeat until no matches
 			var max_loops = 100
 			var loops = 0
+			
+			# Evitar matches al spawnear (incluyendo rainbow)
 			while (match_at(i, j, piece.color) and loops < max_loops):
 				rand = randi_range(0, possible_pieces.size() - 1)
 				loops += 1
 				piece = possible_pieces[rand].instantiate()
+			
 			add_child(piece)
 			piece.position = grid_to_pixel(i, j)
-			# fill array with pieces
 			all_pieces[i][j] = piece
 
 func match_at(i, j, color):
 	# check left
 	if i > 1:
 		if all_pieces[i - 1][j] != null and all_pieces[i - 2][j] != null:
-			if all_pieces[i - 1][j].color == color and all_pieces[i - 2][j].color == color:
+			if _colors_match(all_pieces[i - 1][j].color, color) and _colors_match(all_pieces[i - 2][j].color, color):
 				return true
-	# check down
-	if j> 1:
+	# 
+	if j > 1:
 		if all_pieces[i][j - 1] != null and all_pieces[i][j - 2] != null:
-			if all_pieces[i][j - 1].color == color and all_pieces[i][j - 2].color == color:
+			if _colors_match(all_pieces[i][j - 1].color, color) and _colors_match(all_pieces[i][j - 2].color, color):
 				return true
 	return false
 	
@@ -267,6 +263,7 @@ func swap_pieces(column, row, direction: Vector2):
 	#other_piece.position = grid_to_pixel(column, row)
 	first_piece.move(grid_to_pixel(column + direction.x, row + direction.y))
 	other_piece.move(grid_to_pixel(column, row))
+	audio_controller.sfx_swap("invalid")
 	# TODO (PARCIAL · M3): si alguna de las piezas intercambiadas es especial,
 	# actívala aquí (su efecto reemplaza a la búsqueda normal de combinaciones).
 	if not move_checked:
@@ -312,7 +309,7 @@ func find_matches():
 					# detect horizontal matches
 				var match_length = 1
 				var k = i + 1
-				while k < width and all_pieces[k][j] != null and all_pieces[k][j].color == current_color:
+				while k < width and all_pieces[k][j] != null and _colors_match(all_pieces[k][j].color, current_color):
 					match_length += 1
 					k += 1
 				
@@ -386,7 +383,7 @@ func process_match_lines(lines):
 			5:
 				for x in range(width):
 					for y in range(height):
-						if all_pieces[x][y] != null and all_pieces[x][y].color == color:
+						if all_pieces[x][y] != null and _colors_match(all_pieces[x][y].color, color):
 							all_pieces[x][y].matched = true
 							all_pieces[x][y].dim()
 				audio_controller.sfx_match(5)
@@ -405,6 +402,9 @@ func destroy_matched():
 	
 	for sp in special_pieces:
 		sp.piece.on_destroyed(self, sp.i, sp.j)
+		sp.piece.dim()
+		
+	await get_tree().create_timer(0.4).timeout
 	
 	for i in width:
 		for j in height:
@@ -431,7 +431,6 @@ func destroy_matched():
 		collapse_timer.start()
 	else:
 		swap_back()
-		audio_controller.sfx_swap("invalid")
 
 func collapse_columns():
 	for i in width:
@@ -505,13 +504,6 @@ func restart_grid():
 				all_pieces[i][j].queue_free()
 				all_pieces[i][j] = null
 	
-	# Reset variables
-	state = MOVE
-	move_checked = false
-	current_combo = 0
-	piece_one = null
-	piece_two = null
-	
 	spawn_pieces()
 	
 	# This starts the board match-free
@@ -573,12 +565,12 @@ func check_position_for_match(x, y) -> bool:
 	var horizontal_length = 1
 	# Check right
 	var i = x + 1
-	while i < width and all_pieces[i][y] != null and all_pieces[i][y].color == color:
+	while i < width and all_pieces[i][y] != null and _colors_match(all_pieces[i][y].color, color):
 		horizontal_length += 1
 		i += 1
 	# Check left
 	i = x - 1
-	while i >= 0 and all_pieces[i][y] != null and all_pieces[i][y].color == color:
+	while i >= 0 and all_pieces[i][y] != null and _colors_match(all_pieces[i][y].color, color):
 		horizontal_length += 1
 		i -= 1
 	
@@ -589,12 +581,12 @@ func check_position_for_match(x, y) -> bool:
 	var vertical_length = 1
 	# Check down
 	var j = y + 1
-	while j < height and all_pieces[x][j] != null and all_pieces[x][j].color == color:
+	while j < height and all_pieces[x][j] != null and _colors_match(all_pieces[x][j].color, color):
 		vertical_length += 1
 		j += 1
 	# Check up
 	j = y - 1
-	while j >= 0 and all_pieces[x][j] != null and all_pieces[x][j].color == color:
+	while j >= 0 and all_pieces[x][j] != null and _colors_match(all_pieces[x][j].color, color):
 		vertical_length += 1
 		j -= 1
 	
@@ -628,6 +620,7 @@ func imposibilizar_grid():
 
 	if not hay_jugadas_validas():
 		print("Confirmed: no valid moves")
+		
 	else:
 		print("Pattern unexpectedly has moves")
 #endregion
@@ -699,4 +692,3 @@ func reset():
 	piece_two = null
 	current_combo = 0
 	restart_grid()
-	

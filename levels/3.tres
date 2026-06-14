@@ -8,5 +8,5 @@ name = "Nivel 3"
 value = 100
 color = "yellow"
 moves_limit = 10
-available_colors = Array[String](["green", "light_green", "pink", "yellow", "orange"])
+available_colors = Array[String](["green", "light_green", "yellow", "orange"])
 metadata/_custom_type_script = "uid://blhm7y1ddy3c6"
