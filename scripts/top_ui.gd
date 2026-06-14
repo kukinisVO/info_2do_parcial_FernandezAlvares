@@ -1,8 +1,8 @@
 extends TextureRect
 
-@onready var score_label = $MarginContainer/HBoxContainer/score_label
-@onready var counter_label = $MarginContainer/HBoxContainer/counter_label
-@onready var type_label = $MarginContainer/HBoxContainer/type_label
+@onready var score_label : Label = $MarginContainer/HBoxContainer/score_label
+@onready var counter_label : Label = $MarginContainer/HBoxContainer/counter_label
+@onready var type_label  : Label = $MarginContainer/HBoxContainer/type_label
 
 var current_score = 0
 var current_count = 0
@@ -15,7 +15,9 @@ func _ready() -> void:
 	if grid:
 		grid.score_changed.connect(update_score)
 		grid.counter_changed.connect(update_counter)
-		grid.init_labels.connect(init_labels)  
+		grid.init_labels.connect(init_labels)
+		
+
 
 func init_labels(type:int, base_score:int, limit:int, objective_value:int, objective_color:String,nivel:int) -> void:
 	current_count = limit
@@ -28,7 +30,7 @@ func init_labels(type:int, base_score:int, limit:int, objective_value:int, objec
 func update_score(nuevo_puntaje: int) -> void:
 	current_score = nuevo_puntaje
 	score_label.text = "Score:\n%s" % current_score
-
+	
 func update_counter(restantes: int, _total:int) -> void:
 	var old_count = current_count
 	current_count = restantes
