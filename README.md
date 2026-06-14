@@ -1,53 +1,30 @@
 # Segundo Parcial — Match-3 (Infografía, I/2026)
 
-Proyecto base para el segundo parcial. Recibes un juego **Match-3** funcional pero
-incompleto, hecho en **Godot 4.6**, y tu trabajo es convertirlo en un juego completo.
+Ronaldo Erick Fernandez Benavides 77737 
+Andrew F. Alvarez Jordan 77766
 
-> 📋 **El enunciado completo, la rúbrica y los criterios de evaluación están en
-> [`enunciado.md`](enunciado.md). Léelo antes de empezar.**
+Notas:
 
-## Cómo correr el juego
+Se implemento todos los B y M
+Se removió la segunda hbox ubicada dentro de la hbox en el nodo de top UI
+Se añadió una text label dentro de la hbox restante al mismo nivel que las otras text labels 
+puede probarse al realizarse un combo 
+Se modificaron los atributos de level config tal y como lo mencionaba posible el script
 
-1. Instala [Godot 4.6](https://godotengine.org/download).
-2. Abre **esta carpeta** desde el editor de Godot (botón *Import* → selecciona el
-   `project.godot`).
-3. Presiona `F5` (o el botón *Play* ▶). La escena principal es `scenes/game.tscn`.
+Para la pantalla de victoria se hizo una escena nueva la cual redirige al juego principal. Se muestran las pantallas de victoria y derrota 
+Se añadio un nodo para controlar el audio del juego
+Para la revision de estado trancado se debe apretar T, que pondrá un tablero sin solucion, y luego R para activar la función que solo lo reordenaría si no hay solución. Esta función se llama cuando ocurre de manera natural tambien.
+Se hizo los efectos de lineas de 4 y 5 en grid.gd, pero los efectos especiales son parte de pieces.gd, donde se decidió que
+- row, elimina todas las piezas del mismo color en la misma linea
+- column,  elimina todas las piezas del mismo color en la misma columna
+- adjacent, elimina todas las piezas del mismo color en un radio
+- rainbow,  elimina todas las piezas en un mismo radio
 
-Deberías poder intercambiar piezas y ver combinaciones que se destruyen, caen y se
-rellenan. Ese núcleo ya está resuelto.
+Extras:
+Se añadió una cámara 2D dentro de la escena principal para el efecto de sacudida
+Se añadio la semilla diaria
+Se añadio un shader (https://godotshaders.com/shader/test-crt-vcr/) al juego
 
-## Por dónde empezar
-
-El núcleo del juego está hecho; lo que falta está marcado en el código con comentarios
-`# TODO (PARCIAL · <ítem>)`. Búscalos para saber exactamente dónde conectar cada cosa:
-
-```
-grep -rn "TODO (PARCIAL" scripts/
-```
-
-Cada marcador corresponde a un ítem de la rúbrica (B1–B5 base, M1–M4 obligatorias).
-
-## Estructura
-
-```
-scenes/         escenas: game.tscn (principal), piece.tscn y las piezas de color
-scripts/
-  grid.gd         toda la lógica del tablero (intercambio, match, destruir, colapsar, rellenar)
-  piece.gd        una pieza individual (color, animación de movimiento)
-  top_ui.gd       el HUD: etiquetas de puntaje y contador (por conectar)
-  level_config.gd andamiaje sugerido para niveles dirigidos por datos (M1/M4)
-assets/         sprites de piezas (incluye especiales), fuente, fondo y sonidos
-enunciado.md    el enunciado completo con la rúbrica
-```
-
-## Qué debes implementar (resumen)
-
-**Base (termina el juego):** puntaje + HUD, límite de movimientos/tiempo, victoria/derrota
-con pantalla final y reinicio, sonidos.
-**Obligatorias (más allá del tutorial):** sistema de objetivos/niveles, detección de
-bloqueo + rebarajado, piezas especiales + combos, niveles dirigidos por datos + persistencia.
-
-Detalle y puntajes en [`enunciado.md`](enunciado.md).
 
 ## Entrega
 
